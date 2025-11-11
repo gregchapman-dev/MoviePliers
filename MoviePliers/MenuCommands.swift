@@ -92,10 +92,10 @@ struct MenuCommands: Commands {
         CommandGroup(replacing: .undoRedo) {
             Button("Undo") {
                 print("undo")
-            }
+            }.keyboardShortcut("Z", modifiers: .command)
             Button("Redo") {
                 print("redo")
-            }
+            }.keyboardShortcut("Z", modifiers: [.shift, .command])
         }
 
         CommandGroup(replacing: .pasteboard) {
@@ -111,19 +111,25 @@ struct MenuCommands: Commands {
             Button("Paste") {
                 print("paste")
             }.keyboardShortcut("V", modifiers: .command)
-            Button("Replace") {
-                print("replace")
-            }.keyboardShortcut("V", modifiers: [.command, .shift])
-            Button("Add") {
-                if let activeMovieID {
-                    Task {
-                        await movieStore.addAsync(for: activeMovieID)
+            .modifierKeyAlternate(.shift) {
+                Button("Replace") {
+                    print("replace")
+                }
+            }
+            .modifierKeyAlternate(.option) {
+                Button("Add") {
+                    if let activeMovieID {
+                        Task {
+                            await movieStore.addAsync(for: activeMovieID)
+                        }
                     }
                 }
-            }.keyboardShortcut("V", modifiers: [.command, .option])
-            Button("Add Scaled") {
-                print("add scaled")
-            }.keyboardShortcut("V", modifiers: [.command, .option, .shift])
+            }
+            .modifierKeyAlternate([.option, .shift]) {
+                Button("Add Scaled") {
+                    print("add scaled")
+                }
+            }
             Button("Delete") {
                 print("delete")
             }.keyboardShortcut(.delete, modifiers: [])
