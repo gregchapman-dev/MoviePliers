@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  MoviePlyers
+//  MoviePliers
 //
 //  Created by Greg Chapman on 10/26/25.
 //

@@ -1,6 +1,6 @@
 //
-//  MoviePlyersApp.swift
-//  MoviePlyers
+//  MoviePliersApp.swift
+//  MoviePliers
 //
 //  Created by Greg Chapman on 10/26/25.
 //
@@ -11,7 +11,7 @@ import Observation
 import Combine
 
 @main
-struct MoviePlyersApp: App {
+struct MoviePliersApp: App {
 //    init() {
 //        print("app init")
 //    }
