@@ -111,25 +111,25 @@ struct MenuCommands: Commands {
             Button("Paste") {
                 print("paste")
             }.keyboardShortcut("V", modifiers: .command)
-            .modifierKeyAlternate(.shift) {
-                Button("Replace") {
-                    print("replace")
+                .modifierKeyAlternate(.shift) {
+                    Button("Replace") {
+                        print("replace")
+                    }
                 }
-            }
-            .modifierKeyAlternate(.option) {
-                Button("Add") {
-                    if let activeMovieID {
-                        Task {
-                            await movieStore.addAsync(for: activeMovieID)
+                .modifierKeyAlternate(.option) {
+                    Button("Add") {
+                        if let activeMovieID {
+                            Task {
+                                await movieStore.addAsync(for: activeMovieID)
+                            }
                         }
                     }
                 }
-            }
-            .modifierKeyAlternate([.option, .shift]) {
-                Button("Add Scaled") {
-                    print("add scaled")
+                .modifierKeyAlternate([.option, .shift]) {
+                    Button("Add Scaled") {
+                        print("add scaled")
+                    }
                 }
-            }
             Button("Delete") {
                 print("delete")
             }.keyboardShortcut(.delete, modifiers: [])
