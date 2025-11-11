@@ -1,0 +1,37 @@
+//
+//  MoviePlyersApp.swift
+//  MoviePlyers
+//
+//  Created by Greg Chapman on 10/26/25.
+//
+
+import SwiftUI
+import AVFoundation
+import Observation
+import Combine
+
+@main
+struct MoviePlyersApp: App {
+//    init() {
+//        print("app init")
+//    }
+
+    var body: some Scene {
+        WindowGroup(id: "movie-window", for: UUID.self) { movieID in
+            if let identifier = movieID.wrappedValue {
+                ContentView(movieID: identifier)
+                    .navigationTitle(movieStore.windowTitle(for: identifier))
+            }
+            else {
+                MainView()
+            }
+        }
+        .commands {
+            MenuCommands()
+        }
+
+        Settings {
+            // SettingsView()
+        }
+    }
+}
