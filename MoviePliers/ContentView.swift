@@ -10,21 +10,25 @@ import AVFoundation
 import AVKit
 
 struct ContentView: View {
-    @State private var movieID: UUID
+    @Bindable private var movieInfo: MovieInfo
     var body: some View {
         VStack {
-            Text("movieID: \(movieID.uuidString)")
-            VideoPlayer(player: movieStore.player(for: movieID))
+            Text("movieID: \(movieInfo.id.uuidString)")
+            VideoPlayer(player: movieInfo.player)
         }
-        .focusedSceneValue(\.activeMovieID, $movieID) // stash off active movieID (when we have focus)
+        .focusedSceneValue(\.activeMovieID, $movieInfo.id) // stash off active movieID (when we have focus)
     }
 
     init(movieID theID: UUID) {
         if !movieStore.contains(theID) {
             print("no movie (window going away, or preview)")
+            // Just make one without contents (don't put it in the movieStore)
+            self.movieInfo = MovieInfo()
         }
-        self.movieID = theID
-        print("self.movieID = \(self.movieID)")
+        else {
+            self.movieInfo = movieStore.getMovieInfo(for: theID)!
+            print("ContentView movie ID = \(self.movieInfo.id.uuidString)")
+        }
     }
 
     #Preview {

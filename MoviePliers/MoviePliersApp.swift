@@ -20,7 +20,7 @@ struct MoviePliersApp: App {
         WindowGroup(id: "movie-window", for: UUID.self) { movieID in
             if let identifier = movieID.wrappedValue {
                 ContentView(movieID: identifier)
-                    .navigationTitle(movieStore.windowTitle(for: identifier))
+                    .navigationTitle(movieStore.getMovieInfo(for: identifier)?.windowTitle ?? "unknown")
             }
             else {
                 MainView()

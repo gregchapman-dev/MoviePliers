@@ -25,8 +25,8 @@ struct MenuCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button("New") {
-                let newId = movieStore.newMovie()
-                openWindow(id: "movie-window", value: newId)
+                let newInfo = movieStore.newMovie()
+                openWindow(id: "movie-window", value: newInfo.id)
             }
             .keyboardShortcut("N", modifiers: .command)
             Button("Open...") {
@@ -38,8 +38,8 @@ struct MenuCommands: Commands {
                 case .success(let url):
                     // Handle the selected file URL here
                     print("Selected file URL: \(url)")
-                    if let newId = try? movieStore.openMovie(at: url) {
-                        openWindow(id: "movie-window", value: newId)
+                    if let info = try? movieStore.openMovie(at: url) {
+                        openWindow(id: "movie-window", value: info.id)
                     }
                     else {
                         print("could not open movie at URL: \(url)")
@@ -53,20 +53,25 @@ struct MenuCommands: Commands {
 
 //            Button("Open Image Sequence...") {
 //                print("open image sequence")
-//                let newId = movieStore.openImageSequence(url: URL(string: "file://imageFolder")!)
-//                openWindow(id: "movie-window", value: newId)
+//                let info = movieStore.openImageSequence(url: URL(string: "file://imageFolder")!)
+//                openWindow(id: "movie-window", value: info.id)
 //            }
         }
         CommandGroup(replacing: .saveItem) {
             Button("Close") {
                 print("close movie")
-                // print("activeMovieID = \($activeMovieID)")
-                if let identifier = activeMovieID {
-                    if movieStore.movieIsModified(for: identifier) {
-                        print("need to save")
+                // print("activeMovieID = \($activeMovieInfo.id.uuidString)")
+                if let id = activeMovieID {
+                    if let info = movieStore.getMovieInfo(for: id) {
+                        if info.isModified {
+                            print("need to save")
+                        }
+                        movieStore.removeMovieInfo(for: info.id)
+                        print("removed")
                     }
-                    movieStore.removeMovie(for: identifier)
-                    print("removed")
+                    else {
+                        print("no movie info for activeMovieID: \(id.uuidString)")
+                    }
                 }
                 else {
                     print("no activeMovieID")
@@ -104,8 +109,10 @@ struct MenuCommands: Commands {
             }.keyboardShortcut("X", modifiers: .command)
 
             Button("Copy") {
-                if let activeMovieID {
-                    movieStore.copy(for: activeMovieID)
+                if let id = activeMovieID {
+                    if let info = movieStore.getMovieInfo(for: id) {
+                        info.copy()
+                    }
                 }
             }.keyboardShortcut("C", modifiers: .command)
             Button("Paste") {
@@ -118,9 +125,11 @@ struct MenuCommands: Commands {
                 }
                 .modifierKeyAlternate(.option) {
                     Button("Add") {
-                        if let activeMovieID {
-                            Task {
-                                await movieStore.addAsync(for: activeMovieID)
+                        if let id = activeMovieID {
+                            if let info = movieStore.getMovieInfo(for: id) {
+                                Task {
+                                    await info.addAsync()
+                                }
                             }
                         }
                     }
@@ -135,7 +144,11 @@ struct MenuCommands: Commands {
             }.keyboardShortcut(.delete, modifiers: [])
             Divider()
             Button("Select All") {
-                movieStore.selectAll(for: activeMovieID ?? UUID())
+                if let id = activeMovieID {
+                    if let info = movieStore.getMovieInfo(for: id) {
+                        info.selectAll()
+                    }
+                }
             }.keyboardShortcut("A", modifiers: .command)
             Button("Select None") {
                 print("select none")
