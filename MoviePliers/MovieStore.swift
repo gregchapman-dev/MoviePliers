@@ -129,6 +129,11 @@ class MovieInfo: Identifiable {
                     try track?.insertTimeRange(segment.timeMapping.source, of: trackToPaste, at: .zero, copySampleData: false)
                 }
             }
+            // we apparently need to make a new playerItem and put it in the player.
+            if let player = self.player {
+                let newPlayerItem = AVPlayerItem(asset: movie)
+                player.replaceCurrentItem(with: newPlayerItem)
+            }
         }
         catch {
             print("error: \(error)")
