@@ -102,6 +102,10 @@ class MovieInfo: Identifiable {
             return
         }
         
+        guard let movie: AVMutableMovie = self.movie else {
+            return
+        }
+        
         do {
             let movieToPaste = AVMovie(data: movieHeader)
             let tracksToPaste = try await movieToPaste.load(.tracks)
@@ -114,14 +118,20 @@ class MovieInfo: Identifiable {
                 return
             }
             for trackToPaste in tracksToPaste {
+                let segmentsToInsert = try await trackToPaste.load(.segments)
+
                 // create a matchingTrack in self.movie
+                let track = movie.addMutableTrack(withMediaType: trackToPaste.mediaType, copySettingsFrom: trackToPaste)
                 
                 // walk the edits in trackToPaste, laying each edit (with data references, no actual data)
                 // into that matchingTrack in self.movie
-                
+                for segment in segmentsToInsert {
+                    try track?.insertTimeRange(segment.timeMapping.source, of: trackToPaste, at: .zero, copySampleData: false)
+                }
             }
         }
         catch {
+            print("error: \(error)")
         }
     }
 }
