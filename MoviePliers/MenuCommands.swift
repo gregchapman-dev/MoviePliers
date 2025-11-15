@@ -25,8 +25,8 @@ struct MenuCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button("New") {
-                let newInfo = movieStore.newMovie()
-                openWindow(id: "movie-window", value: newInfo.id)
+                let newMovieViewModel = movieStore.newMovieViewModel()
+                openWindow(id: "movie-window", value: newMovieViewModel.id)
             }
             .keyboardShortcut("N", modifiers: .command)
             Button("Open...") {
@@ -62,11 +62,11 @@ struct MenuCommands: Commands {
                 print("close movie")
                 // print("activeMovieID = \($activeMovieInfo.id.uuidString)")
                 if let id = activeMovieID {
-                    if let info = movieStore.getMovieInfo(for: id) {
-                        if info.isModified {
+                    if let mvm = movieStore.getMovieViewModel(for: id) {
+                        if mvm.isModified {
                             print("need to save")
                         }
-                        movieStore.removeMovieInfo(for: info.id)
+                        movieStore.removeMovieViewModel(for: mvm.id)
                         print("removed")
                     }
                     else {
@@ -110,8 +110,8 @@ struct MenuCommands: Commands {
 
             Button("Copy") {
                 if let id = activeMovieID {
-                    if let info = movieStore.getMovieInfo(for: id) {
-                        info.copy()
+                    if let mm = movieStore.getMovieViewModel(for: id)?.movieModel {
+                        mm.copy()
                     }
                 }
             }.keyboardShortcut("C", modifiers: .command)
@@ -126,9 +126,9 @@ struct MenuCommands: Commands {
                 .modifierKeyAlternate(.option) {
                     Button("Add") {
                         if let id = activeMovieID {
-                            if let info = movieStore.getMovieInfo(for: id) {
+                            if let mm = movieStore.getMovieViewModel(for: id)?.movieModel {
                                 Task {
-                                    await info.addAsync()
+                                    await mm.addAsync()
                                 }
                             }
                         }
@@ -145,8 +145,8 @@ struct MenuCommands: Commands {
             Divider()
             Button("Select All") {
                 if let id = activeMovieID {
-                    if let info = movieStore.getMovieInfo(for: id) {
-                        info.selectAll()
+                    if let mm = movieStore.getMovieViewModel(for: id)?.movieModel {
+                        mm.selectAll()
                     }
                 }
             }.keyboardShortcut("A", modifiers: .command)
