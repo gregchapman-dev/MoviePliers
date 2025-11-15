@@ -10,11 +10,11 @@ import AVFoundation
 import AVKit
 
 struct ContentView: View {
-    @Bindable private var movieViewModel: MovieViewModel
+    @State private var movieViewModel: MovieViewModel
     var body: some View {
         VStack {
             Text("movieID: \(movieViewModel.id)")
-            VideoPlayer(player: movieViewModel.player)
+            MoviePlayerControlsView(viewModel: $movieViewModel)
         }
         .focusedSceneValue(\.activeMovieID, $movieViewModel.id) // stash off active movieID (when we have focus)
     }

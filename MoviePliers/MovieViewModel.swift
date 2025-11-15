@@ -59,6 +59,45 @@ class MovieViewModel: Identifiable {
         return self.movieModel?.isModified ?? false
     }
     
+    var isPlaying: Bool {
+        if let player = self.player {
+            return player.timeControlStatus == .playing
+        }
+        return false
+    }
+    
+    func togglePlayPause() {
+        if let player = self.player {
+            if player.timeControlStatus == .paused {
+                player.play()
+            }
+            else {
+                player.pause()
+            }
+        }
+    }
+    
+    var currentTime: Double {
+        if let player = self.player {
+            return player.currentTime().seconds
+        }
+        return 0.0
+    }
+    
+    func seek(to seconds: Double) {
+        if let player = self.player {
+            // TODO: use movie's favorite (biggest?) timescale
+            player.seek(to: CMTime(seconds: seconds, preferredTimescale: 60000))
+        }
+    }
+    
+    var duration: Double {
+        if let playerItem = self.playerItem {
+            return playerItem.duration.seconds
+        }
+        return 0.0
+    }
+    
     func movieDidChange() {
         if let player = self.player {
             if let movie = self.movieModel?.movie {
