@@ -13,23 +13,16 @@ struct MoviePlayerControlsView: View {
     }
  
     private var controlsView: some View {
-        VStack {
-            Spacer()
- 
+        HStack {
+            // Play/Pause Button
+            Button(action: viewModel.togglePlayPause) {
+                Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.title)
+                    .foregroundColor(.black)
+            }
+            
             // Timeline
             timelineView
- 
-            // Control Buttons
-            HStack(spacing: 30) {
-                // Play/Pause Button
-                Button(action: viewModel.togglePlayPause) {
-                    Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.title)
-                        .foregroundColor(.black)
-                }
- 
-            }
-            .padding()
         }
         .background(
             LinearGradient(
@@ -43,12 +36,15 @@ struct MoviePlayerControlsView: View {
     private var timelineView: some View {
         VStack(spacing: 8) {
             // Progress Slider
-            Slider(
+            SelectableRangeSlider(
                 value: Binding(
                     get: { viewModel.currentTime },
                     set: { viewModel.seek(to: $0) }
                 ),
-                in: 0...max(viewModel.duration, 0.1)
+                duration: Binding(
+                    get: { viewModel.duration },
+                    set: { _ in }
+                )
             )
             .tint(.white)
  
