@@ -32,19 +32,15 @@ struct SelectableRangeSlider: View {
                 // The thumb
                 Circle()
                     .frame(width: 30, height: 30)
-                    .offset(x: convertValueToThumbOffset(self.viewModel.currentTime, width: geometry.size.width))
+                    .offset(x: convertValueToThumbOffset(for: self.viewModel.currentTime, width: geometry.size.width))
                     .gesture(
                         DragGesture()
-                            .onChanged({ (value) in
-                                let newMovieOffset = convertValue(for: value.location, width: geometry.size.width)
-                                self.lastClickedValue = newMovieOffset
-                                self.viewModel.seek(to: newMovieOffset)
-                            })
-                            .onEnded({ (value) in
-                                let newMovieOffset = convertValue(for: value.location, width: geometry.size.width)
-                                self.lastClickedValue = newMovieOffset
-                                self.viewModel.seek(to: newMovieOffset)
-                            })
+                            .onChanged { value in
+                                handleDrag(point: value.location, width: geometry.size.width)
+                            }
+                            .onEnded { value in
+                                handleDrag(point: value.location, width: geometry.size.width)
+                            }
                         )
                 
                 Text("currentValue=\(self.viewModel.currentTime)")
@@ -89,8 +85,8 @@ struct SelectableRangeSlider: View {
     }
     
     // Convert slider value to thumb x coordinate
-    func convertValueToThumbOffset(_ value: Double, width: CGFloat) -> CGFloat {
-        let percentage: CGFloat = CGFloat(value / viewModel.duration)
+    func convertValueToThumbOffset(for x: Double, width: CGFloat) -> CGFloat {
+        let percentage: CGFloat = CGFloat(x / viewModel.duration)
         return width * percentage
     }
     
@@ -109,6 +105,12 @@ struct SelectableRangeSlider: View {
         }
         self.lastClickedValue = tappedValue
         self.viewModel.seek(to: Double(tappedValue))
+    }
+    
+    func handleDrag(point: CGPoint, width: CGFloat) {
+        let newMovieOffset = convertValue(for: point, width: width)
+        self.lastClickedValue = newMovieOffset
+        self.viewModel.seek(to: newMovieOffset)
     }
     
     // Helper to calculate the visual width of the selected range
