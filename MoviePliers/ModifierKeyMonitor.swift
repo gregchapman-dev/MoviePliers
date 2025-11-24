@@ -2,9 +2,10 @@ import SwiftUI
 import Combine
 import AppKit
 
-class ModifierKeyMonitor: ObservableObject {
-    @Published var isShiftPressed: Bool = false
-    //@Published var isOptionPressed: Bool = false
+@Observable
+class ModifierKeyMonitor {
+    var isShiftPressed: Bool = false
+    //var isOptionPressed: Bool = false
     private var eventMonitor: Any?
 
     init() {

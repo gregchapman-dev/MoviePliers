@@ -1,9 +1,8 @@
 import SwiftUI
 
 struct SelectableRangeSlider: View {
-    @ObservedObject var modifierKeyMonitor: ModifierKeyMonitor
-    @State private var currentValue: Binding<Double>
-    @State private var duration: Binding<Double>
+    @Bindable var modifierKeyMonitor: ModifierKeyMonitor
+    @Bindable var viewModel: MovieViewModel
     @State private var selectionStart: Double
     @State private var selectionEnd: Double
     @State private var lastClickedValue: Double?
@@ -29,6 +28,17 @@ struct SelectableRangeSlider: View {
                     .frame(width: selectionWidth(geometry.size.width), height: sliderHeight)
                     .offset(x: selectionOffset(geometry.size.width))
                     .cornerRadius(sliderHeight / 2)
+                
+                // The thumb
+                Circle()
+                    .frame(width: 30, height: 30)
+                    .offset(x: convertValueToThumbOffset(self.viewModel.currentTime, width: geometry.size.width))
+                    .gesture(DragGesture().onChanged({ (value) in
+                        let newMovieOffset = convertValue(for: value.location, width: geometry.size.width)
+                        self.viewModel.seek(to: newMovieOffset)
+                    }))
+                
+                Text("currentValue=\(self.viewModel.currentTime)")
             }
             .contentShape(Rectangle()) // Makes the whole area tappable
 //            .focusable()
@@ -55,19 +65,24 @@ struct SelectableRangeSlider: View {
         .frame(height: sliderHeight)
     }
     
-    init(value: Binding<Double>, duration: Binding<Double>) {
-        self.modifierKeyMonitor = ModifierKeyMonitor()
-        self.selectionStart = value.wrappedValue
-        self.selectionEnd = value.wrappedValue
+    init(viewModel: MovieViewModel, modifierKeyMonitor: ModifierKeyMonitor) {
+        self.modifierKeyMonitor = modifierKeyMonitor
+        self.viewModel = viewModel
+        self.selectionStart = 0
+        self.selectionEnd = 0
         self.lastClickedValue = nil
-        self.currentValue = value          // will update automatically as movie plays
-        self.duration = duration    // will update automatically as movie is edited
     }
     
     // Convert tap point to a slider value
     func convertValue(for point: CGPoint, width: CGFloat) -> Double {
         let percentage = Double(point.x / width)
-        return duration.wrappedValue * percentage
+        return viewModel.duration * percentage
+    }
+    
+    // Convert slider value to thumb x coordinate
+    func convertValueToThumbOffset(_ value: Double, width: CGFloat) -> CGFloat {
+        let percentage: CGFloat = CGFloat(value / viewModel.duration)
+        return width * percentage
     }
     
     // Handle the selection logic
@@ -84,19 +99,19 @@ struct SelectableRangeSlider: View {
             self.selectionEnd = tappedValue
         }
         self.lastClickedValue = tappedValue
-        self.currentValue.wrappedValue = tappedValue
+        self.viewModel.seek(to: Double(tappedValue))
     }
     
     // Helper to calculate the visual width of the selected range
     func selectionWidth( _ width: CGFloat) -> CGFloat {
-        let totalRange = self.duration.wrappedValue
+        let totalRange = self.viewModel.duration
         let selectedRange = self.selectionEnd - self.selectionStart
         return CGFloat(selectedRange / totalRange) * width
     }
     
     // Helper to calculate the visual offset of the selected range
     func selectionOffset( _ width: CGFloat) -> CGFloat {
-        let totalRange = self.duration.wrappedValue
+        let totalRange = self.viewModel.duration
         let offsetFromStart = self.selectionStart
         return CGFloat(offsetFromStart / totalRange) * width
     }
