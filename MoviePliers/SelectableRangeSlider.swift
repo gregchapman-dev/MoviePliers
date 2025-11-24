@@ -33,10 +33,17 @@ struct SelectableRangeSlider: View {
                 Circle()
                     .frame(width: 30, height: 30)
                     .offset(x: convertValueToThumbOffset(self.viewModel.currentTime, width: geometry.size.width))
-                    .gesture(DragGesture().onChanged({ (value) in
-                        let newMovieOffset = convertValue(for: value.location, width: geometry.size.width)
-                        self.viewModel.seek(to: newMovieOffset)
-                    }))
+                    .gesture(
+                        DragGesture()
+                            .onChanged({ (value) in
+                                let newMovieOffset = convertValue(for: value.location, width: geometry.size.width)
+                                self.viewModel.seek(to: newMovieOffset)
+                            })
+                            .onEnded({ (value) in
+                                let newMovieOffset = convertValue(for: value.location, width: geometry.size.width)
+                                self.viewModel.seek(to: newMovieOffset)
+                            })
+                        )
                 
                 Text("currentValue=\(self.viewModel.currentTime)")
             }
