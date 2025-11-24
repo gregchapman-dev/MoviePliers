@@ -37,10 +37,12 @@ struct SelectableRangeSlider: View {
                         DragGesture()
                             .onChanged({ (value) in
                                 let newMovieOffset = convertValue(for: value.location, width: geometry.size.width)
+                                self.lastClickedValue = newMovieOffset
                                 self.viewModel.seek(to: newMovieOffset)
                             })
                             .onEnded({ (value) in
                                 let newMovieOffset = convertValue(for: value.location, width: geometry.size.width)
+                                self.lastClickedValue = newMovieOffset
                                 self.viewModel.seek(to: newMovieOffset)
                             })
                         )
