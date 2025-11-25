@@ -2,7 +2,6 @@ import SwiftUI
  
 struct MoviePlayerControlsView: View {
     @Binding var viewModel: MovieViewModel
-    @State var modifierKeyMonitor: ModifierKeyMonitor = ModifierKeyMonitor()
     @State private var isShowingControls = true
  
     var body: some View {
@@ -38,8 +37,7 @@ struct MoviePlayerControlsView: View {
         VStack(spacing: 8) {
             // Progress Slider
             SelectableRangeSlider(
-                viewModel: viewModel,
-                modifierKeyMonitor: modifierKeyMonitor
+                viewModel: viewModel
             )
             .tint(.white)
  
