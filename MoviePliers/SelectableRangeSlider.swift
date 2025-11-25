@@ -114,9 +114,28 @@ struct SelectableRangeSlider: View {
     
     func handleSelection(_ newMovieTime: CMTime) {
         if self.shiftPressed {
-            // Shift-click: Expand the range
-            self.selectionStart = min(self.selectionStart, newMovieTime)
-            self.selectionEnd = max(self.selectionEnd, newMovieTime)
+            // modify selection
+            if self.selectionStart == self.selectionEnd {
+                self.selectionStart = min(self.selectionStart, newMovieTime)
+                self.selectionEnd = max(self.selectionEnd, newMovieTime)
+            }
+            else if newMovieTime > self.selectionEnd {
+                self.selectionEnd = newMovieTime
+            }
+            else if newMovieTime < self.selectionStart {
+                self.selectionStart = newMovieTime
+            }
+            else {
+                // newMovieTime is inside the current selection
+                // figure out which end is closest, and move that one
+                let endIsCloser = self.selectionEnd - newMovieTime < newMovieTime - self.selectionStart
+                if endIsCloser {
+                    self.selectionEnd = newMovieTime
+                } else {
+                    self.selectionStart = newMovieTime
+                }
+                
+            }
         } else {
             // Regular click: Set a single point (or the start of a new range)
             self.selectionStart = newMovieTime
