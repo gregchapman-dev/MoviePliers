@@ -34,7 +34,13 @@ class MovieStore {
     func openMovie(at url: URL) throws -> MovieViewModel {
         do {
             _ = url.startAccessingSecurityScopedResource()
-            let mov = try AVMutableMovie(url: url, error: ())
+            let mov = try AVMutableMovie(
+                url: url,
+                options: [
+                    AVURLAssetPreferPreciseDurationAndTimingKey : true
+                ],
+                error: ()
+            )
             let movieViewModel = MovieViewModel(movie: mov, url: url)
             movieViewModels[movieViewModel.id] = movieViewModel
             return movieViewModel

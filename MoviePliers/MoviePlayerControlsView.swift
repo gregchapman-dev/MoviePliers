@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreMedia
  
 struct MoviePlayerControlsView: View {
     @Binding var viewModel: MovieViewModel
@@ -59,13 +60,15 @@ struct MoviePlayerControlsView: View {
   
     // MARK: - Helper Methods
   
-    private func formatTime(_ timeInSeconds: Double) -> String {
+    private func formatTime(_ time: CMTime) -> String {
+        let timeInSeconds = time.seconds
         guard !timeInSeconds.isNaN && !timeInSeconds.isInfinite else {
             return "0:00"
         }
  
-        let minutes = Int(timeInSeconds) / 60
+        let hours = Int(timeInSeconds) / 3600
+        let minutes = (Int(timeInSeconds) / 60) - hours
         let seconds = Int(timeInSeconds) % 60
-        return String(format: "%d:%02d", minutes, seconds)
+        return String(format: "%d:%02d:%02d", hours, minutes, seconds)
     }
 }

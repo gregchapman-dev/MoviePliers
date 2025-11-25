@@ -1,9 +1,10 @@
 import SwiftUI
+import CoreMedia
 
 struct SelectableRangeSlider: View {
     @Bindable var viewModel: MovieViewModel
-    @State private var selectionStart: Double
-    @State private var selectionEnd: Double
+    @State private var selectionStart: CMTime
+    @State private var selectionEnd: CMTime
     @State private var shiftPressed: Bool
     @FocusState private var focused: Bool
     
@@ -30,7 +31,7 @@ struct SelectableRangeSlider: View {
                     .frame(width: selectionWidth(geometry.size.width), height: sliderHeight)
                     .offset(x: selectionOffset(geometry.size.width))
                 
-                Text("currentValue=\(self.viewModel.currentTime)")
+                Text("currentValue=\(makeCMTimeString(self.viewModel.currentTime))")
 
                 // The thumb
                 Rectangle()
@@ -38,7 +39,7 @@ struct SelectableRangeSlider: View {
                     .frame(width: thumbWidth, height: thumbHeight)
                     .cornerRadius(thumbHeight / 4)
                     .position(x: 0, y: sliderHeight)
-                    .offset(x: convertValueToThumbOffset(for: self.viewModel.currentTime, width: geometry.size.width))
+                    .offset(x: convertTimeToThumbOffset(for: self.viewModel.currentTime, width: geometry.size.width))
                     .gesture(
                         DragGesture()
                             .onChanged { value in
@@ -81,20 +82,21 @@ struct SelectableRangeSlider: View {
     
     init(viewModel: MovieViewModel) {
         self.viewModel = viewModel
-        self.selectionStart = 0.0
-        self.selectionEnd = 0.0
+        self.selectionStart = .zero
+        self.selectionEnd = .zero
         self.shiftPressed = false
     }
     
     // Convert tap point to a slider value
-    func convertValue(for point: CGPoint, width: CGFloat) -> Double {
+    func convertValue(for point: CGPoint, width: CGFloat) -> CMTime {
         let percentage = Double(point.x / width)
-        return viewModel.duration * percentage
+        let cgFloatTime = viewModel.duration.seconds * percentage
+        return CMTimeMakeWithSeconds(cgFloatTime, preferredTimescale: Int32(NSEC_PER_SEC))
     }
     
     // Convert slider value to thumb x coordinate
-    func convertValueToThumbOffset(for value: Double, width: CGFloat) -> CGFloat {
-        let percentage: CGFloat = CGFloat(value / viewModel.duration)
+    func convertTimeToThumbOffset(for time: CMTime, width: CGFloat) -> CGFloat {
+        let percentage: CGFloat = CGFloat(time.seconds / viewModel.duration.seconds)
         return (width * percentage)
     }
     
@@ -111,7 +113,7 @@ struct SelectableRangeSlider: View {
             self.selectionStart = tappedValue
             self.selectionEnd = tappedValue
         }
-        self.viewModel.seek(to: Double(tappedValue))
+        self.viewModel.seek(to: tappedValue)
     }
     
     func handleDrag(point: CGPoint, width: CGFloat) {
@@ -129,17 +131,21 @@ struct SelectableRangeSlider: View {
     
     // Helper to calculate the visual width of the selected range
     func selectionWidth( _ width: CGFloat) -> CGFloat {
-        let totalRange = self.viewModel.duration
-        let selectedRange = self.selectionEnd - self.selectionStart
+        let totalRange = self.viewModel.duration.seconds
+        let selectedRange = self.selectionEnd.seconds - self.selectionStart.seconds
         let output = CGFloat(selectedRange / totalRange) * width
         return output
     }
     
     // Helper to calculate the visual offset of the selected range
     func selectionOffset( _ width: CGFloat) -> CGFloat {
-        let totalRange = self.viewModel.duration
-        let offsetFromStart = self.selectionStart
+        let totalRange = self.viewModel.duration.seconds
+        let offsetFromStart = self.selectionStart.seconds
         let output = CGFloat(offsetFromStart / totalRange) * width
         return output
+    }
+    
+    func makeCMTimeString(_ time: CMTime) -> String {
+        return "\(time.value)/\(time.timescale)"
     }
 }
