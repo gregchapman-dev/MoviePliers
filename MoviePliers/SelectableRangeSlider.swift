@@ -100,33 +100,40 @@ struct SelectableRangeSlider: View {
         return (width * percentage)
     }
     
-    // Handle the selection logic
     func handleTap(point: CGPoint, width: CGFloat) {
-        let tappedValue = convertValue(for: point, width: width)
-        
-        if self.shiftPressed {
-            // Shift-click: Expand the range
-            self.selectionStart = min(self.selectionStart, tappedValue)
-            self.selectionEnd = max(self.selectionEnd, tappedValue)
-        } else {
-            // Regular click: Set a single point (or the start of a new range)
-            self.selectionStart = tappedValue
-            self.selectionEnd = tappedValue
-        }
-        self.viewModel.seek(to: tappedValue)
+        let newMovieTime = convertValue(for: point, width: width)
+        self.viewModel.seek(to: newMovieTime)
+        handleSelection(newMovieTime)
     }
     
     func handleDrag(point: CGPoint, width: CGFloat) {
-        let newMovieOffset = convertValue(for: point, width: width)
-        self.viewModel.seek(to: newMovieOffset)
+        let newMovieTime = convertValue(for: point, width: width)
+        self.viewModel.seek(to: newMovieTime)
+        handleSelection(newMovieTime)
+    }
+    
+    func handleSelection(_ newMovieTime: CMTime) {
+        if self.shiftPressed {
+            // Shift-click: Expand the range
+            self.selectionStart = min(self.selectionStart, newMovieTime)
+            self.selectionEnd = max(self.selectionEnd, newMovieTime)
+        } else {
+            // Regular click: Set a single point (or the start of a new range)
+            self.selectionStart = newMovieTime
+            self.selectionEnd = newMovieTime
+        }
     }
     
     func handleRightArrow() {
         self.viewModel.stepForward()
+        let newMovieTime = self.viewModel.currentTime
+        handleSelection(newMovieTime)
     }
     
     func handleLeftArrow() {
         self.viewModel.stepBackward()
+        let newMovieTime = self.viewModel.currentTime
+        handleSelection(newMovieTime)
     }
     
     // Helper to calculate the visual width of the selected range
