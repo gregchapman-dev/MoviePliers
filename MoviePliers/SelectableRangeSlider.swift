@@ -9,8 +9,10 @@ struct SelectableRangeSlider: View {
     @FocusState private var focused: Bool
     
     let sliderHeight: CGFloat = 10
+    let thumbHeight: CGFloat = 24
+    let thumbWidth: CGFloat = 16
     let trackColor = Color.gray
-    let rangeColor = Color.blue
+    let rangeColor = Color.black
     let stepValue = 0.1
 
     var body: some View {
@@ -29,9 +31,12 @@ struct SelectableRangeSlider: View {
                     .offset(x: selectionOffset(geometry.size.width))
                     .cornerRadius(sliderHeight / 2)
                 
+                Text("currentValue=\(self.viewModel.currentTime)")
+
                 // The thumb
-                Circle()
-                    .frame(width: 30, height: 30)
+                Rectangle()
+                    .frame(width: thumbWidth, height: thumbHeight)
+                    .cornerRadius(thumbHeight / 4)
                     .offset(x: convertValueToThumbOffset(for: self.viewModel.currentTime, width: geometry.size.width))
                     .gesture(
                         DragGesture()
@@ -42,12 +47,11 @@ struct SelectableRangeSlider: View {
                                 handleDrag(point: value.location, width: geometry.size.width)
                             }
                         )
-                
-                Text("currentValue=\(self.viewModel.currentTime)")
             }
             .contentShape(Rectangle()) // Makes the whole area tappable
             .focusable()
             .focused($focused)
+            .focusEffectDisabled()
             .onKeyPress(keys: [.rightArrow]) { press in
                 handleRightArrow()
                 return .handled
@@ -69,8 +73,8 @@ struct SelectableRangeSlider: View {
     init(viewModel: MovieViewModel, modifierKeyMonitor: ModifierKeyMonitor) {
         self.modifierKeyMonitor = modifierKeyMonitor
         self.viewModel = viewModel
-        self.selectionStart = 0
-        self.selectionEnd = 0
+        self.selectionStart = 1000.0
+        self.selectionEnd = 2000.0
         self.lastClickedValue = nil
     }
     
@@ -81,9 +85,9 @@ struct SelectableRangeSlider: View {
     }
     
     // Convert slider value to thumb x coordinate
-    func convertValueToThumbOffset(for x: Double, width: CGFloat) -> CGFloat {
-        let percentage: CGFloat = CGFloat(x / viewModel.duration)
-        return width * percentage
+    func convertValueToThumbOffset(for value: Double, width: CGFloat) -> CGFloat {
+        let percentage: CGFloat = CGFloat(value / viewModel.duration)
+        return (width * percentage) - (Double(thumbWidth) / 2)
     }
     
     // Handle the selection logic
