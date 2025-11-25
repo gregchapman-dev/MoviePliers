@@ -6,7 +6,7 @@ struct SelectableRangeSlider: View {
     @State private var selectionStart: Double
     @State private var selectionEnd: Double
     @State private var lastClickedValue: Double?
-//    @FocusState private var focused: Bool
+    @FocusState private var focused: Bool
     
     let sliderHeight: CGFloat = 10
     let trackColor = Color.gray
@@ -46,26 +46,22 @@ struct SelectableRangeSlider: View {
                 Text("currentValue=\(self.viewModel.currentTime)")
             }
             .contentShape(Rectangle()) // Makes the whole area tappable
-//            .focusable()
-//            .focused($focused)
-//            .onKeyPress(keys: [.rightArrow, .leftArrow]) { press in
-//                if .rightArrow in press.characters {
-//                    
-//                    endValue += stepValue
-//                }
-//                else if .leftArrow in press.characters {
-//                    DispatchQueue.main.async {
-//                        endValue -= stepValue
-//                    }
-//                }
-//                return .handled
-//            }
+            .focusable()
+            .focused($focused)
+            .onKeyPress(keys: [.rightArrow]) { press in
+                handleRightArrow()
+                return .handled
+            }
+            .onKeyPress(keys: [.leftArrow]) { press in
+                handleLeftArrow()
+                return .handled
+            }
             .onTapGesture { point in
                 handleTap(point: point, width: geometry.size.width)
             }
-//            .onAppear {
-//                focused = true
-//            }            
+            .onAppear {
+                focused = true
+            }            
         }
         .frame(height: sliderHeight)
     }
@@ -111,6 +107,14 @@ struct SelectableRangeSlider: View {
         let newMovieOffset = convertValue(for: point, width: width)
         self.lastClickedValue = newMovieOffset
         self.viewModel.seek(to: newMovieOffset)
+    }
+    
+    func handleRightArrow() {
+        self.viewModel.stepForward()
+    }
+    
+    func handleLeftArrow() {
+        self.viewModel.stepBackward()
     }
     
     // Helper to calculate the visual width of the selected range

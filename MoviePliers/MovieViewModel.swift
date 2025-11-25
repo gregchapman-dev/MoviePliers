@@ -116,6 +116,20 @@ class MovieViewModel: Identifiable {
         }
     }
     
+    func stepForward() {
+        if self.player != nil && self.playerItem != nil {
+            self.playerItem?.step(byCount: 1)
+            self.currentTime = self.player!.currentTime().seconds
+        }
+    }
+    
+    func stepBackward() {
+        if self.player != nil && self.playerItem != nil {
+            self.playerItem?.step(byCount: -1)
+            self.currentTime = self.player!.currentTime().seconds
+        }
+    }
+    
     var duration: Double {
         if let playerItem = self.playerItem {
             return playerItem.duration.seconds
