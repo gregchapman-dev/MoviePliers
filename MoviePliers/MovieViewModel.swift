@@ -116,14 +116,14 @@ class MovieViewModel: Identifiable {
     
     func stepForward() {
         if self.player != nil && self.playerItem != nil {
-            self.playerItem?.step(byCount: 1)
+            self.playerItem!.step(byCount: 1)
             self.currentTime = self.player!.currentTime()
         }
     }
     
     func stepBackward() {
         if self.player != nil && self.playerItem != nil {
-            self.playerItem?.step(byCount: -1)
+            self.playerItem!.step(byCount: -1)
             self.currentTime = self.player!.currentTime()
         }
     }
