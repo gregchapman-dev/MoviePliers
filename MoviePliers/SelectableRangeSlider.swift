@@ -37,6 +37,7 @@ struct SelectableRangeSlider: View {
                 Rectangle()
                     .frame(width: thumbWidth, height: thumbHeight)
                     .cornerRadius(thumbHeight / 4)
+                    .position(x: 0, y: sliderHeight)
                     .offset(x: convertValueToThumbOffset(for: self.viewModel.currentTime, width: geometry.size.width))
                     .gesture(
                         DragGesture()
@@ -87,7 +88,7 @@ struct SelectableRangeSlider: View {
     // Convert slider value to thumb x coordinate
     func convertValueToThumbOffset(for value: Double, width: CGFloat) -> CGFloat {
         let percentage: CGFloat = CGFloat(value / viewModel.duration)
-        return (width * percentage) - (Double(thumbWidth) / 2)
+        return (width * percentage)
     }
     
     // Handle the selection logic
