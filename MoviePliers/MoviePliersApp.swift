@@ -12,9 +12,13 @@ import Combine
 
 @main
 struct MoviePliersApp: App {
-//    init() {
-//        print("app init")
-//    }
+    init() {
+        if #available(macOS 26.0, *) {
+            AVPlayer.isObservationEnabled = true
+        } else {
+            // Fallback on earlier versions
+        }
+    }
 
     var body: some Scene {
         WindowGroup(id: "movie-window", for: UUID.self) { movieID in
