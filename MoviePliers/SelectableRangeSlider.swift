@@ -108,10 +108,10 @@ struct SelectableRangeSlider: View {
     func handleDragOrTap(point: CGPoint, width: CGFloat) {
         let newMovieTime = convertValue(for: point, width: width)
         self.viewModel.seek(to: newMovieTime)
-        handleSelection(newMovieTime)
+        handleSelection(newMovieTime, clearIfUnshifted: true)
     }
     
-    func handleSelection(_ newMovieTime: CMTime) {
+    func handleSelection(_ newMovieTime: CMTime, clearIfUnshifted: Bool = false) {
         if self.shiftPressed {
             // modify selection
             if self.selectionStart == self.selectionEnd {
@@ -136,9 +136,11 @@ struct SelectableRangeSlider: View {
                 
             }
         } else {
-            // Regular click: Set a single point (or the start of a new range)
-            self.selectionStart = newMovieTime
-            self.selectionEnd = newMovieTime
+            if clearIfUnshifted {
+                // Regular click: Set a single point (or the start of a new range)
+                self.selectionStart = newMovieTime
+                self.selectionEnd = newMovieTime
+            }
         }
     }
     
