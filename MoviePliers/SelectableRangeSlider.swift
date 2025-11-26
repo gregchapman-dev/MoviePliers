@@ -10,10 +10,10 @@ struct SelectableRangeSlider: View {
     
     let sliderHeight: CGFloat = 10
     let thumbHeight: CGFloat = 24
-    let thumbWidth: CGFloat = 16
+    let thumbWidth: CGFloat = 6
     let trackColor = Color.gray
     let selectionColor = Color.black
-    let thumbColor = Color.purple
+    let thumbColor = Color.white
     let stepValue = 0.1
 
     var body: some View {
@@ -38,17 +38,16 @@ struct SelectableRangeSlider: View {
                     .fill(thumbColor)
                     .frame(width: thumbWidth, height: thumbHeight)
                     .cornerRadius(thumbHeight / 4)
-                    .position(x: 0, y: sliderHeight)
                     .offset(x: convertTimeToThumbOffset(for: self.viewModel.currentTime, width: geometry.size.width))
                     .gesture(
-                        DragGesture()
+                        DragGesture(minimumDistance: 0)
                             .onChanged { value in
-                                handleDrag(point: value.location, width: geometry.size.width)
+                                handleDragOrTap(point: value.location, width: geometry.size.width)
                             }
                             .onEnded { value in
-                                handleDrag(point: value.location, width: geometry.size.width)
+                                handleDragOrTap(point: value.location, width: geometry.size.width)
                             }
-                        )
+                    )
             }
             .contentShape(Rectangle()) // Makes the whole area tappable
             .focusable()
@@ -70,9 +69,15 @@ struct SelectableRangeSlider: View {
                 handleLeftArrow()
                 return .handled
             }
-            .onTapGesture { point in
-                handleTap(point: point, width: geometry.size.width)
-            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        handleDragOrTap(point: value.location, width: geometry.size.width)
+                    }
+                    .onEnded { value in
+                        handleDragOrTap(point: value.location, width: geometry.size.width)
+                    }
+            )
             .onAppear {
                 focused = true
             }            
@@ -100,13 +105,7 @@ struct SelectableRangeSlider: View {
         return (width * percentage)
     }
     
-    func handleTap(point: CGPoint, width: CGFloat) {
-        let newMovieTime = convertValue(for: point, width: width)
-        self.viewModel.seek(to: newMovieTime)
-        handleSelection(newMovieTime)
-    }
-    
-    func handleDrag(point: CGPoint, width: CGFloat) {
+    func handleDragOrTap(point: CGPoint, width: CGFloat) {
         let newMovieTime = convertValue(for: point, width: width)
         self.viewModel.seek(to: newMovieTime)
         handleSelection(newMovieTime)
