@@ -150,7 +150,7 @@ class MovieViewModel: Identifiable {
         }
     }
     
-    func clearSelection() {
+    func selectNone() {
         self.selection = nil
     }
     

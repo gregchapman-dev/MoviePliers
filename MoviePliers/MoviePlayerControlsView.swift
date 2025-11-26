@@ -67,7 +67,7 @@ struct MoviePlayerControlsView: View {
         }
  
         let hours = Int(timeInSeconds) / 3600
-        let minutes = (Int(timeInSeconds) / 60) - hours
+        let minutes = (Int(timeInSeconds) / 60) - (hours * 60)
         let seconds = Int(timeInSeconds) % 60
         return String(format: "%d:%02d:%02d", hours, minutes, seconds)
     }

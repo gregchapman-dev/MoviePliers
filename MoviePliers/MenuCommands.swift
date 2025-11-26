@@ -152,6 +152,11 @@ struct MenuCommands: Commands {
             }.keyboardShortcut("A", modifiers: .command)
             Button("Select None") {
                 print("select none")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.selectNone()
+                    }
+                }
             }.keyboardShortcut("D", modifiers: .command)
             Divider()
             Button("Extract Tracks...") {
