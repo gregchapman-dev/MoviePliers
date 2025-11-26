@@ -3,8 +3,6 @@ import CoreMedia
 
 struct SelectableRangeSlider: View {
     @Bindable var viewModel: MovieViewModel
-    @State private var selectionStart: CMTime
-    @State private var selectionEnd: CMTime
     @State private var shiftPressed: Bool
     @FocusState private var focused: Bool
     
@@ -31,14 +29,14 @@ struct SelectableRangeSlider: View {
                     .frame(width: selectionWidth(geometry.size.width), height: sliderHeight)
                     .offset(x: selectionOffset(geometry.size.width))
                 
-                Text("currentValue=\(makeCMTimeString(self.viewModel.currentTime))")
+                Text("currentValue=\(makeCMTimeString(viewModel.currentTime))")
 
                 // The thumb
                 Rectangle()
                     .fill(thumbColor)
                     .frame(width: thumbWidth, height: thumbHeight)
                     .cornerRadius(thumbHeight / 4)
-                    .offset(x: convertTimeToThumbOffset(for: self.viewModel.currentTime, width: geometry.size.width))
+                    .offset(x: convertTimeToThumbOffset(for: viewModel.currentTime, width: geometry.size.width))
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
@@ -87,14 +85,14 @@ struct SelectableRangeSlider: View {
     
     init(viewModel: MovieViewModel) {
         self.viewModel = viewModel
-        self.selectionStart = .zero
-        self.selectionEnd = .zero
         self.shiftPressed = false
     }
     
     // Convert tap point to a slider value
     func convertValue(for point: CGPoint, width: CGFloat) -> CMTime {
+        if point.x < 0.0 { return .zero }
         let percentage = Double(point.x / width)
+        if percentage > 1.0 { return viewModel.duration }
         let cgFloatTime = viewModel.duration.seconds * percentage
         return CMTimeMakeWithSeconds(cgFloatTime, preferredTimescale: Int32(NSEC_PER_SEC))
     }
@@ -107,67 +105,92 @@ struct SelectableRangeSlider: View {
     
     func handleDragOrTap(point: CGPoint, width: CGFloat) {
         let newMovieTime = convertValue(for: point, width: width)
-        self.viewModel.seek(to: newMovieTime)
-        handleSelection(newMovieTime, clearIfUnshifted: true)
+        let oldMovieTime = viewModel.currentTime
+        viewModel.seek(to: newMovieTime)
+        handleSelection(oldTime: oldMovieTime, newTime: newMovieTime, clearIfUnshifted: true)
     }
     
-    func handleSelection(_ newMovieTime: CMTime, clearIfUnshifted: Bool = false) {
+    func handleSelection(oldTime: CMTime, newTime: CMTime, clearIfUnshifted: Bool = false) {
         if self.shiftPressed {
             // modify selection
-            if self.selectionStart == self.selectionEnd {
-                self.selectionStart = min(self.selectionStart, newMovieTime)
-                self.selectionEnd = max(self.selectionEnd, newMovieTime)
-            }
-            else if newMovieTime > self.selectionEnd {
-                self.selectionEnd = newMovieTime
-            }
-            else if newMovieTime < self.selectionStart {
-                self.selectionStart = newMovieTime
+            if viewModel.selection == nil || viewModel.selection!.isEmpty {
+                // no current selection, set the selection to oldTime..newTime
+                if oldTime == newTime {
+                    viewModel.selection = nil
+                }
+                else {
+                    // get the start/end in the right order
+                    let lowerTime: CMTime = min(oldTime, newTime)
+                    let higherTime: CMTime = max(oldTime, newTime)
+                    viewModel.selection = CMTimeRange(start: lowerTime, end: higherTime)
+                }
             }
             else {
-                // newMovieTime is inside the current selection
-                // figure out which end is closest, and move that one
-                let endIsCloser = self.selectionEnd - newMovieTime < newMovieTime - self.selectionStart
-                if endIsCloser {
-                    self.selectionEnd = newMovieTime
-                } else {
-                    self.selectionStart = newMovieTime
+                // there is an existing selection, so we need to modify it
+                // (we ignore oldTime in all these cases)
+                if newTime > viewModel.selection!.end {
+                    if viewModel.selection!.start == newTime {
+                        viewModel.selection = nil
+                    }
+                    else {
+                        viewModel.selection = CMTimeRange(start: viewModel.selection!.start, end: newTime)
+                    }
                 }
-                
+                else if newTime < viewModel.selection!.start {
+                    if newTime == viewModel.selection!.end {
+                        viewModel.selection = nil
+                    }
+                    else {
+                        viewModel.selection = CMTimeRange(start: newTime, end: viewModel.selection!.end)
+                    }
+                }
+                else {
+                    // newMovieTime is inside the current selection
+                    // figure out which end is closest, and move that one
+                    let endIsCloser = viewModel.selection!.end - newTime < newTime - viewModel.selection!.start
+                    if endIsCloser {
+                        viewModel.selection = CMTimeRange(start: viewModel.selection!.start, end: newTime)
+                    } else {
+                        viewModel.selection = CMTimeRange(start: newTime, end: viewModel.selection!.end)
+                    }
+                }
             }
-        } else {
+        }
+        else {
             if clearIfUnshifted {
-                // Regular click: Set a single point (or the start of a new range)
-                self.selectionStart = newMovieTime
-                self.selectionEnd = newMovieTime
+                // Regular click: clear selection
+                viewModel.selection = nil
             }
         }
     }
     
     func handleRightArrow() {
-        self.viewModel.stepForward()
-        let newMovieTime = self.viewModel.currentTime
-        handleSelection(newMovieTime)
+        let oldMovieTime = viewModel.currentTime
+        viewModel.stepForward()
+        let newMovieTime = viewModel.currentTime
+        handleSelection(oldTime: oldMovieTime, newTime: newMovieTime)
     }
     
     func handleLeftArrow() {
-        self.viewModel.stepBackward()
-        let newMovieTime = self.viewModel.currentTime
-        handleSelection(newMovieTime)
+        let oldMovieTime = viewModel.currentTime
+        viewModel.stepBackward()
+        let newMovieTime = viewModel.currentTime
+        handleSelection(oldTime: oldMovieTime, newTime: newMovieTime)
     }
     
     // Helper to calculate the visual width of the selected range
     func selectionWidth( _ width: CGFloat) -> CGFloat {
-        let totalRange = self.viewModel.duration.seconds
-        let selectedRange = self.selectionEnd.seconds - self.selectionStart.seconds
+        let totalRange = viewModel.duration.seconds
+        let selectedRange = viewModel.selection?.duration.seconds ?? 0.0
+        // self.selectionEnd.seconds - self.selectionStart.seconds
         let output = CGFloat(selectedRange / totalRange) * width
         return output
     }
     
     // Helper to calculate the visual offset of the selected range
     func selectionOffset( _ width: CGFloat) -> CGFloat {
-        let totalRange = self.viewModel.duration.seconds
-        let offsetFromStart = self.selectionStart.seconds
+        let totalRange = viewModel.duration.seconds
+        let offsetFromStart = viewModel.selection?.start.seconds ?? 0.0
         let output = CGFloat(offsetFromStart / totalRange) * width
         return output
     }

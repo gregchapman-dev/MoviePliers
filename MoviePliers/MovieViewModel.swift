@@ -5,7 +5,8 @@ import AppKit
 class MovieViewModel: Identifiable {
     var id: UUID
     var movieModel: MovieModel?
-    
+    var selection: CMTimeRange?
+
     init(movie: AVMutableMovie? = nil, url: URL? = nil, id: UUID? = nil) {
         if let id {
             self.id = id
@@ -135,6 +136,27 @@ class MovieViewModel: Identifiable {
         return .zero
     }
     
+    // editing functions
+    func selectAll() {
+        self.selection = CMTimeRange(start: .zero, end: self.movieModel?.movie?.duration ?? .zero)
+    }
+    
+    func select(_ selection: CMTimeRange) {
+        if !selection.isValid {
+            self.selection = nil
+        }
+        else {
+            self.selection = selection
+        }
+    }
+    
+    func clearSelection() {
+        self.selection = nil
+    }
+    
+    func copy() {
+        self.movieModel?.copy(from: self.selection!)
+    }
     func movieDidChange() {
         if let player = self.player {
             if let movie = self.movieModel?.movie {

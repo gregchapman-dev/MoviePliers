@@ -110,8 +110,8 @@ struct MenuCommands: Commands {
 
             Button("Copy") {
                 if let id = activeMovieID {
-                    if let mm = movieStore.getMovieViewModel(for: id)?.movieModel {
-                        mm.copy()
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.copy()
                     }
                 }
             }.keyboardShortcut("C", modifiers: .command)
@@ -145,8 +145,8 @@ struct MenuCommands: Commands {
             Divider()
             Button("Select All") {
                 if let id = activeMovieID {
-                    if let mm = movieStore.getMovieViewModel(for: id)?.movieModel {
-                        mm.selectAll()
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.selectAll()
                     }
                 }
             }.keyboardShortcut("A", modifiers: .command)

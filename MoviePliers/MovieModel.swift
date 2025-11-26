@@ -15,9 +15,6 @@ class MovieModel: Identifiable {
     // Doesn't exist for a new movie that has been edited, but not yet saved.
     var url: URL?
     
-    // current edit state
-    var selection: CMTimeRange?
-    
     init(movie: AVMutableMovie? = nil, id: UUID? = nil, url: URL? = nil) {
         if let id {
             self.id = id
@@ -42,23 +39,14 @@ class MovieModel: Identifiable {
         return self.movie?.isModified ?? false
     }
     
-    func selectAll() {
-        self.selection = CMTimeRange(start: .zero, end: self.movie?.duration ?? .zero)
-    }
-    
-    func select(_ selection: CMTimeRange) {
-        self.selection = selection
-    }
-    
-    func copy() {
-        NSPasteboard.general.clearContents()
-        
+    func copy(from: CMTimeRange) {
         if self.movie == nil {
             return
         }
 
         do {
             let movieHeader: Data = try self.movie!.makeMovieHeader(fileType: .mov)
+            NSPasteboard.general.clearContents()
             let result = NSPasteboard.general.setData(movieHeader, forType: qtMoviePasteboardType)
             print("\(result)")
         }
