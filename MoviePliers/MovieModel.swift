@@ -39,23 +39,28 @@ class MovieModel: Identifiable {
         return self.movie?.isModified ?? false
     }
     
-    func copy(from: CMTimeRange) {
-        if self.movie == nil {
+    func copy(fromTimeRange: CMTimeRange) async {
+        guard let movie = self.movie else {
             return
         }
 
         do {
-            let movieHeader: Data = try self.movie!.makeMovieHeader(fileType: .mov)
+            // make new mutable movie that has all the same tracks (and eventually track relationships)
+            // as self.movie, and for each newMovieTrack, insertTimeRange(selection, of: movieTrack,
+            // at: .zero, copySampleData: false)
+            let copiedMovie = AVMutableMovie()
+            try copiedMovie.insertTimeRange(fromTimeRange, of: movie, at: .zero, copySampleData: false)
+            let movieHeader: Data = try copiedMovie.makeMovieHeader(fileType: .mov)
             NSPasteboard.general.clearContents()
             let result = NSPasteboard.general.setData(movieHeader, forType: qtMoviePasteboardType)
             print("\(result)")
         }
         catch {
-            print("failed to makeMovieHeader: \(error) from movieID: \(self.id)")
+            print("copy failed: \(error) from movieID: \(self.id)")
         }
     }
     
-    func addAsync() async {
+    func add() async {
         guard let movieHeader: Data = NSPasteboard.general.data(forType: qtMoviePasteboardType) else {
             return
         }
@@ -72,7 +77,7 @@ class MovieModel: Identifiable {
             case .loaded:
                 print("loaded value", movieToPaste.tracks)
             default:
-                print("unexpected AVPlayerItemStatus: \(status)")
+                print("unexpected movieToPaste.status: \(status)")
                 return
             }
             for trackToPaste in tracksToPaste {

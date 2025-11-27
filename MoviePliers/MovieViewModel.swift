@@ -154,9 +154,18 @@ class MovieViewModel: Identifiable {
         self.selection = nil
     }
     
-    func copy() {
-        self.movieModel?.copy(from: self.selection!)
+    func copy() async {
+        if self.movieModel != nil {
+            await self.movieModel!.copy(fromTimeRange: self.selection!)
+        }
     }
+    
+    func add() async {
+        if self.movieModel != nil {
+            await self.movieModel!.add()
+        }
+    }
+    
     func movieDidChange() {
         if let player = self.player {
             if let movie = self.movieModel?.movie {

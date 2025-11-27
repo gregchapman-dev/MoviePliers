@@ -62,11 +62,11 @@ struct MenuCommands: Commands {
                 print("close movie")
                 // print("activeMovieID = \($activeMovieInfo.id.uuidString)")
                 if let id = activeMovieID {
-                    if let mvm = movieStore.getMovieViewModel(for: id) {
-                        if mvm.isModified {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        if viewModel.isModified {
                             print("need to save")
                         }
-                        movieStore.removeMovieViewModel(for: mvm.id)
+                        movieStore.removeMovieViewModel(for: viewModel.id)
                         print("removed")
                     }
                     else {
@@ -111,7 +111,9 @@ struct MenuCommands: Commands {
             Button("Copy") {
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        viewModel.copy()
+                        Task {
+                            await viewModel.copy()
+                        }
                     }
                 }
             }.keyboardShortcut("C", modifiers: .command)
@@ -126,9 +128,9 @@ struct MenuCommands: Commands {
                 .modifierKeyAlternate(.option) {
                     Button("Add") {
                         if let id = activeMovieID {
-                            if let mm = movieStore.getMovieViewModel(for: id)?.movieModel {
+                            if let viewModel = movieStore.getMovieViewModel(for: id) {
                                 Task {
-                                    await mm.addAsync()
+                                    await viewModel.add()
                                 }
                             }
                         }
