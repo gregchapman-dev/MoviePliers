@@ -22,7 +22,9 @@ class MovieStore {
     }
     
     func newMovieViewModel(for id: UUID) -> MovieViewModel {
-        let movieViewModel = MovieViewModel(movie: AVMutableMovie(), id: id)
+        let movie = AVMutableMovie()
+        movie.timescale = 60000  // good enough for 59.94 fps (1001/60000 frame duration)
+        let movieViewModel = MovieViewModel(movie: movie, id: id)
         movieViewModels[id] = movieViewModel
         return movieViewModel
     }

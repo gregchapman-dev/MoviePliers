@@ -232,7 +232,7 @@ class MovieViewModel: Identifiable {
         }
     }
     
-    func movieDidLoad() {
+    func interestingTimesDidLoad() {
         self.interestingTimes = self.movieModel?.interestingTrackTimes ?? []
     }
 }

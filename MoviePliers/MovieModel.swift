@@ -36,12 +36,12 @@ class MovieModel: Identifiable {
         if let movie {
             self.movie = movie
             Task {
-                await loadMovie()
+                await loadInterestingTimes()
             }
         }
     }
     
-    func loadMovie() async {
+    func loadInterestingTimes() async {
         guard let movie = self.movie else {
             return
         }
@@ -87,7 +87,7 @@ class MovieModel: Identifiable {
             print("Error loading movie: \(error)")
         }
         if let parent = self.parent {
-            parent.movieDidLoad()
+            parent.interestingTimesDidLoad()
         }
     }
     
@@ -105,33 +105,40 @@ class MovieModel: Identifiable {
             // make new mutable movie that has all the same tracks (and eventually track relationships)
             // as self.movie, and for each newMovieTrack, insertTimeRange(selection, of: movieTrack,
             // at: .zero, copySampleData: false)
+//            let copiedMovie = AVMutableMovie()
+//            try copiedMovie.insertTimeRange(fromTimeRange, of: movie, at: .zero, copySampleData: false)
+//            let movieHeader: Data = try copiedMovie.makeMovieHeader(fileType: .mov)
+//            NSPasteboard.general.clearContents()
+//            let result = NSPasteboard.general.setData(movieHeader, forType: qtMoviePasteboardType)
+//            print("\(result)")
+            let tracksToCopy = try await movie.load(.tracks)
+            let status = movie.status(of: .tracks)
+            switch status {
+            case .loaded:
+                let _ = 1
+                //print("loaded value", movie.tracks)
+            default:
+                print("unexpected movie.status: \(status)")
+                return
+            }
             let copiedMovie = AVMutableMovie()
-            try copiedMovie.insertTimeRange(fromTimeRange, of: movie, at: .zero, copySampleData: false)
+            copiedMovie.timescale = movie.timescale
+            for trackToCopy in tracksToCopy {
+                // create a matchingTrack in self.movie
+                if let track = copiedMovie.addMutableTrack(withMediaType: trackToCopy.mediaType, copySettingsFrom: trackToCopy) {
+                    // copy the selected time range into that track (just the references, ma'am)
+                    try track.insertTimeRange(fromTimeRange, of: trackToCopy, at: .zero, copySampleData: false)
+                }
+            }
             let movieHeader: Data = try copiedMovie.makeMovieHeader(fileType: .mov)
             NSPasteboard.general.clearContents()
             let result = NSPasteboard.general.setData(movieHeader, forType: qtMoviePasteboardType)
-            print("\(result)")
-//            let tracksToCopy = try await movie.load(.tracks)
-//            let status = movie.status(of: .tracks)
-//            switch status {
-//            case .loaded:
-//                print("loaded value", movie.tracks)
-//            default:
-//                print("unexpected movie.status: \(status)")
-//                return
-//            }
-//            let copiedMovie = AVMutableMovie()
-//            for trackToCopy in tracksToCopy {
-//                if trackToCopy.mediaType == .audio {
-//                    // create a matchingTrack in self.movie
-//                    let track = copiedMovie.addMutableTrack(withMediaType: trackToCopy.mediaType, copySettingsFrom: trackToCopy)
-//                    // long try track!.insertTimeRange(fromTimeRange, of: trackToCopy, at: .zero, copySampleData: false)
-//                    // short try track!.insertTimeRange(CMTimeRange(start: .zero, end: movie.duration), of: trackToCopy, at: .zero, copySampleData: false)
-//                    // long try track!.insertTimeRange(CMTimeRange(start: .zero, end: fromTimeRange.duration), of: trackToCopy, at: .zero, copySampleData: false)
-//                    // short.  Doesn't match 48000 timescale or video frame boundary, but does match 30000 timescale
-//                    try track!.insertTimeRange(CMTimeRange(start: CMTime(value: 1002, timescale: 30000), end: movie.duration), of: trackToCopy, at: .zero, copySampleData: false)
-//                }
-//            }
+            if result {
+                print("copy: succeeded")
+            }
+            else {
+                print("copy: failed")
+            }
         }
         catch {
             print("copy failed: \(error) from movieID: \(self.id)")
@@ -150,6 +157,7 @@ class MovieModel: Identifiable {
         do {
             let movieToPaste = AVMovie(data: movieHeader)
             let tracksToPaste = try await movieToPaste.load(.tracks)
+            let duration = try await movieToPaste.load(.duration)
             let status = movieToPaste.status(of: .tracks)
             switch status {
             case .loaded:
@@ -159,20 +167,18 @@ class MovieModel: Identifiable {
                 return
             }
             for trackToPaste in tracksToPaste {
-                let segmentsToInsert = try await trackToPaste.load(.segments)
-
                 // create a matchingTrack in self.movie
-                let track = movie.addMutableTrack(withMediaType: trackToPaste.mediaType, copySettingsFrom: trackToPaste)
-                
-                // walk the edits in trackToPaste, laying each edit (with data references, no actual data)
-                // into that matchingTrack in self.movie
-                for segment in segmentsToInsert {
-                    try track?.insertTimeRange(segment.timeMapping.source, of: trackToPaste, at: .zero, copySampleData: false)
+                if let track = movie.addMutableTrack(withMediaType: trackToPaste.mediaType, copySettingsFrom: trackToPaste) {
+                    try track.insertTimeRange(CMTimeRange(start: .zero, end: duration), of: trackToPaste, at: .zero, copySampleData: false)
                 }
             }
+
             // we apparently need to hand-notify the MovieViewModel, so it can make a new playerItem and put
             // it in the player.
             self.parent?.movieDidChange()
+
+            // we have more tracks, we should re-load interesting times
+            await loadInterestingTimes()
         }
         catch {
             print("error: \(error)")
