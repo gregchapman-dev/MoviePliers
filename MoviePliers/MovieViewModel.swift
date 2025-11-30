@@ -6,6 +6,7 @@ class MovieViewModel: Identifiable {
     var id: UUID
     var movieModel: MovieModel?
     var selection: CMTimeRange?
+    var interestingTimes: [CMTime]
 
     init(movie: AVMutableMovie? = nil, url: URL? = nil, id: UUID? = nil) {
         if let id {
@@ -17,10 +18,10 @@ class MovieViewModel: Identifiable {
         
         self.currentTime = .zero
         self.enablePeriodicTimeObserver = true
+        self.interestingTimes = []
         
         if let movie {
-            self.movieModel = MovieModel(movie: movie, id: self.id, url: url)
-            self.movieModel!.setParent(self)
+            self.movieModel = MovieModel(movie: movie, id: self.id, url: url, parent: self)
         }
     }
     
@@ -115,17 +116,69 @@ class MovieViewModel: Identifiable {
         }
     }
     
+    func getNextInterestingTime(_ currentTime: CMTime) -> CMTime {
+        if currentTime < .zero {
+            // shouldn't ever happen, but we assume it below...
+            return self.interestingTimes.first ?? .zero
+        }
+
+        if currentTime >= self.duration {
+            return self.interestingTimes.last ?? self.duration
+        }
+        
+        if self.interestingTimes.isEmpty {
+            // no video track sample times? Jump back by a quarter second.
+            return currentTime + CMTime(seconds: 0.25, preferredTimescale: currentTime.timescale)
+        }
+        
+        // Do it slow for now!
+        for i in 1..<self.interestingTimes.count {
+            if self.interestingTimes[i - 1] <= currentTime && currentTime < self.interestingTimes[i] {
+                return self.interestingTimes[i]
+            }
+        }
+        
+        // Shouldn't get here. Jump back by a quarter second.
+        return currentTime + CMTime(seconds: 0.25, preferredTimescale: currentTime.timescale)
+    }
+        
+    func getPreviousInterestingTime(_ currentTime: CMTime) -> CMTime {
+        if currentTime <= .zero {
+            return self.interestingTimes.first ?? .zero
+        }
+
+        if currentTime > self.duration {
+            // shouldn't ever happen, but we assume it below...
+            return self.interestingTimes.last ?? self.duration
+        }
+        
+        if self.interestingTimes.isEmpty {
+            // no video track sample times? Jump back by a quarter second.
+            return currentTime - CMTime(seconds: 0.25, preferredTimescale: currentTime.timescale)
+        }
+        
+        // Do it slow for now!
+        for i in 1..<self.interestingTimes.count {
+            if self.interestingTimes[i - 1] < currentTime && currentTime <= self.interestingTimes[i] {
+                return self.interestingTimes[i - 1]
+            }
+        }
+        
+        // Shouldn't get here. Jump back by a quarter second.
+        return currentTime - CMTime(seconds: 0.25, preferredTimescale: currentTime.timescale)
+    }
+        
     func stepForward() {
         if self.player != nil && self.playerItem != nil {
-            self.playerItem!.step(byCount: 1)
-            self.currentTime = self.player!.currentTime()
+            let nextTime = getNextInterestingTime(self.currentTime)
+            self.seek(to: nextTime)
         }
     }
     
     func stepBackward() {
         if self.player != nil && self.playerItem != nil {
-            self.playerItem!.step(byCount: -1)
-            self.currentTime = self.player!.currentTime()
+            let nextTime = getPreviousInterestingTime(self.currentTime)
+            self.seek(to: nextTime)
         }
     }
     
@@ -155,7 +208,7 @@ class MovieViewModel: Identifiable {
     }
     
     func copy() async {
-        if self.movieModel != nil {
+        if self.movieModel != nil && self.selection != nil {
             await self.movieModel!.copy(fromTimeRange: self.selection!)
         }
     }
@@ -177,5 +230,9 @@ class MovieViewModel: Identifiable {
                 player.replaceCurrentItem(with: nil)
             }
         }
+    }
+    
+    func movieDidLoad() {
+        self.interestingTimes = self.movieModel?.interestingTrackTimes ?? []
     }
 }

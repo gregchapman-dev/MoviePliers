@@ -15,23 +15,80 @@ class MovieModel: Identifiable {
     // Doesn't exist for a new movie that has been edited, but not yet saved.
     var url: URL?
     
-    init(movie: AVMutableMovie? = nil, id: UUID? = nil, url: URL? = nil) {
+    var interestingTrackTimes: [CMTime]
+    
+    init(movie: AVMutableMovie? = nil, id: UUID? = nil, url: URL? = nil, parent: MovieViewModel? = nil) {
         if let id {
             self.id = id
         }
         else {
             self.id = UUID()
         }
+        
+        self.interestingTrackTimes = []
+        
         if let url {
             self.url = url
         }
+        if let parent {
+            self.parent = parent
+        }
         if let movie {
             self.movie = movie
+            Task {
+                await loadMovie()
+            }
         }
     }
     
-    func setParent(_ parentViewModel: MovieViewModel) {
-        self.parent = parentViewModel
+    func loadMovie() async {
+        guard let movie = self.movie else {
+            return
+        }
+
+        do {
+            let tracks = try await movie.load(.tracks)
+            for track in tracks {
+                if track.mediaType == .video {
+                    let segments = try await track.load(.segments)
+                    for segment in segments {
+                        // segment.timeMapping.source is media time range
+                        let mediaTimeRange = segment.timeMapping.source
+                        // segment.timeMapping.target is track time range
+                        let trackTimeRange = segment.timeMapping.target
+
+                        if let cursor = track.makeSampleCursor(presentationTimeStamp: trackTimeRange.start) {
+                            while cursor.presentationTimeStamp < mediaTimeRange.end {
+                                // walk the cursor through the media samples in this segment, noting the track times
+                                // of each media sample as interesting times (we already got the first one).
+                                let mediaTime = cursor.presentationTimeStamp
+                                self.interestingTrackTimes.append(
+                                    CMTimeMapTimeFromRangeToRange(
+                                        mediaTime, fromRange: mediaTimeRange, toRange: trackTimeRange
+                                    )
+                                )
+                                cursor.stepInPresentationOrder(byCount: 1)
+                                if cursor.presentationTimeStamp == mediaTime {
+                                    // cursor did not move; it refuses to step to exact end of movie
+                                    // (because there isn't a sample that starts there), so assume
+                                    // we're done, rather than loop forever.
+                                    self.interestingTrackTimes.append(movie.duration)
+                                    break
+                                }
+                            }
+                        }
+                    }
+                    // we processed a video track, let's just be happy with that
+                    break
+                }
+            }
+        }
+        catch {
+            print("Error loading movie: \(error)")
+        }
+        if let parent = self.parent {
+            parent.movieDidLoad()
+        }
     }
     
     // editing operations
@@ -54,6 +111,27 @@ class MovieModel: Identifiable {
             NSPasteboard.general.clearContents()
             let result = NSPasteboard.general.setData(movieHeader, forType: qtMoviePasteboardType)
             print("\(result)")
+//            let tracksToCopy = try await movie.load(.tracks)
+//            let status = movie.status(of: .tracks)
+//            switch status {
+//            case .loaded:
+//                print("loaded value", movie.tracks)
+//            default:
+//                print("unexpected movie.status: \(status)")
+//                return
+//            }
+//            let copiedMovie = AVMutableMovie()
+//            for trackToCopy in tracksToCopy {
+//                if trackToCopy.mediaType == .audio {
+//                    // create a matchingTrack in self.movie
+//                    let track = copiedMovie.addMutableTrack(withMediaType: trackToCopy.mediaType, copySettingsFrom: trackToCopy)
+//                    // long try track!.insertTimeRange(fromTimeRange, of: trackToCopy, at: .zero, copySampleData: false)
+//                    // short try track!.insertTimeRange(CMTimeRange(start: .zero, end: movie.duration), of: trackToCopy, at: .zero, copySampleData: false)
+//                    // long try track!.insertTimeRange(CMTimeRange(start: .zero, end: fromTimeRange.duration), of: trackToCopy, at: .zero, copySampleData: false)
+//                    // short.  Doesn't match 48000 timescale or video frame boundary, but does match 30000 timescale
+//                    try track!.insertTimeRange(CMTimeRange(start: CMTime(value: 1002, timescale: 30000), end: movie.duration), of: trackToCopy, at: .zero, copySampleData: false)
+//                }
+//            }
         }
         catch {
             print("copy failed: \(error) from movieID: \(self.id)")

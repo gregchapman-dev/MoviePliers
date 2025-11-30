@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreMedia
+import AVFoundation
 
 struct SelectableRangeSlider: View {
     @Bindable var viewModel: MovieViewModel
@@ -12,7 +13,6 @@ struct SelectableRangeSlider: View {
     let trackColor = Color.gray
     let selectionColor = Color.black
     let thumbColor = Color.white
-    let stepValue = 0.1
 
     var body: some View {
         GeometryReader { geometry in
@@ -94,7 +94,7 @@ struct SelectableRangeSlider: View {
         let percentage = Double(point.x / width)
         if percentage > 1.0 { return viewModel.duration }
         let cgFloatTime = viewModel.duration.seconds * percentage
-        return CMTimeMakeWithSeconds(cgFloatTime, preferredTimescale: Int32(NSEC_PER_SEC))
+        return CMTimeMakeWithSeconds(cgFloatTime, preferredTimescale: viewModel.movieModel!.movie!.timescale)
     }
     
     // Convert slider value to thumb x coordinate
