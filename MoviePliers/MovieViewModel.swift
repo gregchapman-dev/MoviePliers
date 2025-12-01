@@ -146,11 +146,11 @@ class MovieViewModel: Identifiable {
     
     // editing functions
     func selectAll() {
-        if self.movieModel == nil || self.movieModel!.movie == nil {
+        if self.duration == .zero {
             self.selection = nil
         }
         else {
-            self.selection = CMTimeRange(start: .zero, end: self.movieModel!.movie!.duration)
+            self.selection = CMTimeRange(start: .zero, end: self.duration)
         }
     }
     
