@@ -16,7 +16,7 @@
 		178E91BF2EDE267200407E45 /* MovieStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B32EDE267200407E45 /* MovieStore.swift */; };
 		178E91C02EDE267200407E45 /* MovieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B42EDE267200407E45 /* MovieView.swift */; };
 		178E91C12EDE267200407E45 /* MovieViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B52EDE267200407E45 /* MovieViewModel.swift */; };
-		178E91C22EDE267200407E45 /* MutableMovie.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B62EDE267200407E45 /* MutableMovie.swift */; };
+		178E91C22EDE267200407E45 /* AVExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B62EDE267200407E45 /* AVExtensions.swift */; };
 		178E91C32EDE267200407E45 /* SelectableRangeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B72EDE267200407E45 /* SelectableRangeSlider.swift */; };
 /* End PBXBuildFile section */
 
@@ -30,7 +30,7 @@
 		178E91B32EDE267200407E45 /* MovieStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieStore.swift; sourceTree = "<group>"; };
 		178E91B42EDE267200407E45 /* MovieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieView.swift; sourceTree = "<group>"; };
 		178E91B52EDE267200407E45 /* MovieViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieViewModel.swift; sourceTree = "<group>"; };
-		178E91B62EDE267200407E45 /* MutableMovie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MutableMovie.swift; sourceTree = "<group>"; };
+		178E91B62EDE267200407E45 /* AVExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVExtensions.swift; sourceTree = "<group>"; };
 		178E91B72EDE267200407E45 /* SelectableRangeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableRangeSlider.swift; sourceTree = "<group>"; };
 		17D18D6F2EAED627008B239E /* MoviePliers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoviePliers.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -59,7 +59,7 @@
 				178E91B02EDE267200407E45 /* MovieModel.swift */,
 				178E91B32EDE267200407E45 /* MovieStore.swift */,
 				178E91B42EDE267200407E45 /* MovieView.swift */,
-				178E91B62EDE267200407E45 /* MutableMovie.swift */,
+				178E91B62EDE267200407E45 /* AVExtensions.swift */,
 			);
 			path = MoviePliers;
 			sourceTree = "<group>";
@@ -160,7 +160,7 @@
 				178E91BF2EDE267200407E45 /* MovieStore.swift in Sources */,
 				178E91C02EDE267200407E45 /* MovieView.swift in Sources */,
 				178E91C12EDE267200407E45 /* MovieViewModel.swift in Sources */,
-				178E91C22EDE267200407E45 /* MutableMovie.swift in Sources */,
+				178E91C22EDE267200407E45 /* AVExtensions.swift in Sources */,
 				178E91C32EDE267200407E45 /* SelectableRangeSlider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
