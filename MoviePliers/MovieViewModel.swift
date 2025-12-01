@@ -106,79 +106,34 @@ class MovieViewModel: Identifiable {
     
     var currentTime: CMTime
     
-    func seek(to time: CMTime) {
+    func seek(to time: CMTime) async {
         if let player = self.player {
             self.enablePeriodicTimeObserver = false
-            player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { finished in
-                self.currentTime = player.currentTime()
-                self.enablePeriodicTimeObserver = true
-            }
+            await player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+            self.currentTime = player.currentTime()
+            self.enablePeriodicTimeObserver = true
         }
     }
     
-    func getNextInterestingTime(_ currentTime: CMTime) -> CMTime {
-        if currentTime < .zero {
-            // shouldn't ever happen, but we assume it below...
-            return self.interestingTimes.first ?? .zero
-        }
-
-        if currentTime >= self.duration {
-            return self.interestingTimes.last ?? self.duration
-        }
-        
-        if self.interestingTimes.isEmpty {
-            // no video track sample times? Jump back by a quarter second.
-            return currentTime + CMTime(seconds: 0.25, preferredTimescale: currentTime.timescale)
-        }
-        
-        // Do it slow for now!
-        for i in 1..<self.interestingTimes.count {
-            if self.interestingTimes[i - 1] <= currentTime && currentTime < self.interestingTimes[i] {
-                return self.interestingTimes[i]
-            }
-        }
-        
-        // Shouldn't get here. Jump back by a quarter second.
-        return currentTime + CMTime(seconds: 0.25, preferredTimescale: currentTime.timescale)
+    func getNextInterestingTime(after currentTime: CMTime) async throws -> CMTime {
+        return try await self.movieModel?.movie?.getNextInterestingTime(after: currentTime) ?? currentTime
     }
         
-    func getPreviousInterestingTime(_ currentTime: CMTime) -> CMTime {
-        if currentTime <= .zero {
-            return self.interestingTimes.first ?? .zero
-        }
-
-        if currentTime > self.duration {
-            // shouldn't ever happen, but we assume it below...
-            return self.interestingTimes.last ?? self.duration
-        }
-        
-        if self.interestingTimes.isEmpty {
-            // no video track sample times? Jump back by a quarter second.
-            return currentTime - CMTime(seconds: 0.25, preferredTimescale: currentTime.timescale)
-        }
-        
-        // Do it slow for now!
-        for i in 1..<self.interestingTimes.count {
-            if self.interestingTimes[i - 1] < currentTime && currentTime <= self.interestingTimes[i] {
-                return self.interestingTimes[i - 1]
-            }
-        }
-        
-        // Shouldn't get here. Jump back by a quarter second.
-        return currentTime - CMTime(seconds: 0.25, preferredTimescale: currentTime.timescale)
+    func getPreviousInterestingTime(before currentTime: CMTime) async throws -> CMTime {
+        return try await self.movieModel?.movie?.getPreviousInterestingTime(before: currentTime) ?? currentTime
     }
         
-    func stepForward() {
+    func stepForward() async throws {
         if self.player != nil && self.playerItem != nil {
-            let nextTime = getNextInterestingTime(self.currentTime)
-            self.seek(to: nextTime)
+            let nextTime = try await getNextInterestingTime(after: self.currentTime)
+            await self.seek(to: nextTime)
         }
     }
     
-    func stepBackward() {
+    func stepBackward() async throws {
         if self.player != nil && self.playerItem != nil {
-            let nextTime = getPreviousInterestingTime(self.currentTime)
-            self.seek(to: nextTime)
+            let nextTime = try await getPreviousInterestingTime(before: self.currentTime)
+            await self.seek(to: nextTime)
         }
     }
     
@@ -191,7 +146,12 @@ class MovieViewModel: Identifiable {
     
     // editing functions
     func selectAll() {
-        self.selection = CMTimeRange(start: .zero, end: self.movieModel?.movie?.duration ?? .zero)
+        if self.movieModel == nil || self.movieModel!.movie == nil {
+            self.selection = nil
+        }
+        else {
+            self.selection = CMTimeRange(start: .zero, end: self.movieModel!.movie!.duration)
+        }
     }
     
     func select(_ selection: CMTimeRange) {
@@ -230,9 +190,5 @@ class MovieViewModel: Identifiable {
                 player.replaceCurrentItem(with: nil)
             }
         }
-    }
-    
-    func interestingTimesDidLoad() {
-        self.interestingTimes = self.movieModel?.interestingTrackTimes ?? []
     }
 }

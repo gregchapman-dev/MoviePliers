@@ -52,12 +52,7 @@ struct SelectableRangeSlider: View {
             .focused($focused)
             .focusEffectDisabled()
             .onModifierKeysChanged(mask: .shift) { _, newFlags in
-                if newFlags.contains(.shift) {
-                    self.shiftPressed = true
-                }
-                else {
-                    self.shiftPressed = false
-                }
+                self.shiftPressed = newFlags.contains(.shift)
             }
             .onKeyPress(keys: [.rightArrow]) { press in
                 handleRightArrow()
@@ -104,10 +99,12 @@ struct SelectableRangeSlider: View {
     }
     
     func handleDragOrTap(point: CGPoint, width: CGFloat) {
-        let newMovieTime = convertValue(for: point, width: width)
-        let oldMovieTime = viewModel.currentTime
-        viewModel.seek(to: newMovieTime)
-        handleSelection(oldTime: oldMovieTime, newTime: newMovieTime, clearIfUnshifted: true)
+        Task {
+            let newMovieTime = convertValue(for: point, width: width)
+            let oldMovieTime = viewModel.currentTime
+            await viewModel.seek(to: newMovieTime)
+            handleSelection(oldTime: oldMovieTime, newTime: newMovieTime, clearIfUnshifted: true)
+        }
     }
     
     func handleSelection(oldTime: CMTime, newTime: CMTime, clearIfUnshifted: Bool = false) {
@@ -165,24 +162,27 @@ struct SelectableRangeSlider: View {
     }
     
     func handleRightArrow() {
-        let oldMovieTime = viewModel.currentTime
-        viewModel.stepForward()
-        let newMovieTime = viewModel.currentTime
-        handleSelection(oldTime: oldMovieTime, newTime: newMovieTime)
+        Task {
+            let oldMovieTime = viewModel.currentTime
+            try await viewModel.stepForward()
+            let newMovieTime = viewModel.currentTime
+            handleSelection(oldTime: oldMovieTime, newTime: newMovieTime)
+        }
     }
     
     func handleLeftArrow() {
-        let oldMovieTime = viewModel.currentTime
-        viewModel.stepBackward()
-        let newMovieTime = viewModel.currentTime
-        handleSelection(oldTime: oldMovieTime, newTime: newMovieTime)
+        Task {
+            let oldMovieTime = viewModel.currentTime
+            try await viewModel.stepBackward()
+            let newMovieTime = viewModel.currentTime
+            handleSelection(oldTime: oldMovieTime, newTime: newMovieTime)
+        }
     }
     
     // Helper to calculate the visual width of the selected range
     func selectionWidth( _ width: CGFloat) -> CGFloat {
         let totalRange = viewModel.duration.seconds
         let selectedRange = viewModel.selection?.duration.seconds ?? 0.0
-        // self.selectionEnd.seconds - self.selectionStart.seconds
         let output = CGFloat(selectedRange / totalRange) * width
         return output
     }
