@@ -39,6 +39,40 @@ class MovieModel: Identifiable {
         return self.movie?.isModified ?? false
     }
     
+    func save(_ url: URL, selfContained: Bool = false) {
+        guard let movie = self.movie else {
+            return
+        }
+        
+        var fileType: AVFileType
+        var theURL: URL
+        if url.pathExtension == "mov" {
+            theURL = url
+            fileType = .mov
+        }
+        else if url.pathExtension == "mp4" {
+            theURL = url
+            fileType = .mp4
+        }
+        else {
+            // add .mov extension and save as .mov
+            theURL = url.appendingPathExtension("mov")
+            fileType = .mov
+        }
+        
+        do {
+            if selfContained {
+                print("self-contained write not yet implemented, writing header only")
+            }
+            let movieHeader: Data = try movie.makeMovieHeader(fileType: fileType)
+            try movieHeader.write(to: theURL, options: .atomic)
+        }
+        catch {
+            print("error saving movie: \(error.localizedDescription)")
+        }
+        
+    }
+    
     func copy(fromTimeRange: CMTimeRange) async {
         guard let movie = self.movie else {
             return

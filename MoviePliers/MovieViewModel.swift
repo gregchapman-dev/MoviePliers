@@ -167,6 +167,12 @@ class MovieViewModel: Identifiable {
         self.selection = nil
     }
     
+    func save(_ url: URL, selfContained: Bool = false) {
+        if let movieModel = self.movieModel {
+            movieModel.save(url, selfContained: selfContained)
+        }
+    }
+    
     func copy() async {
         if self.movieModel != nil && self.selection != nil {
             await self.movieModel!.copy(fromTimeRange: self.selection!)
@@ -174,8 +180,8 @@ class MovieViewModel: Identifiable {
     }
     
     func add() async {
-        if self.movieModel != nil {
-            await self.movieModel!.add()
+        if let movieModel = self.movieModel {
+            await movieModel.add()
         }
     }
     

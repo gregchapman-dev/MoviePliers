@@ -21,7 +21,25 @@ struct MenuCommands: Commands {
     @Environment(\.openWindow) private var openWindow
     @FocusedBinding(\.activeMovieID) var activeMovieID // get the active movie (the one in the focused view/window
     @State private var showingFileImporter = false
+    
+    func showSavePanel(suggestedFilename: String, viewModel: MovieViewModel) {
+        let savePanel = NSSavePanel()
+        savePanel.title = "Export"
+        savePanel.prompt = "Save"
+        savePanel.nameFieldStringValue = suggestedFilename
+        savePanel.canCreateDirectories = true
+        savePanel.allowedContentTypes = [.quickTimeMovie, .mpeg4Movie]
 
+        // Run the panel modally
+        let response = savePanel.runModal()
+
+        if response == .OK {
+            if let url = savePanel.url {
+                viewModel.save(url, selfContained: false)
+            }
+        }
+    }
+    
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button("New") {
@@ -38,8 +56,8 @@ struct MenuCommands: Commands {
                 case .success(let url):
                     // Handle the selected file URL here
                     print("Selected file URL: \(url)")
-                    if let info = try? movieStore.openMovie(at: url) {
-                        openWindow(id: "movie-window", value: info.id)
+                    if let viewModel = try? movieStore.openMovie(at: url) {
+                        openWindow(id: "movie-window", value: viewModel.id)
                     }
                     else {
                         print("could not open movie at URL: \(url)")
@@ -82,15 +100,30 @@ struct MenuCommands: Commands {
 
             Button("Save") {
                 print("save")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        showSavePanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+                    }
+                }
             }
             .keyboardShortcut("S", modifiers: .command)
 
             Button("Save As...") {
                 print("save as")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        showSavePanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+                    }
+                }
             }
             Divider()
             Button("Export...") {
                 print("export")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        showSavePanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+                    }
+                }
             }
         }
 
