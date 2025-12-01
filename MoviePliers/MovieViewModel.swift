@@ -19,9 +19,11 @@ class MovieViewModel: Identifiable {
         self.currentTime = .zero
         self.enablePeriodicTimeObserver = true
         self.interestingTimes = []
+        self.duration = .zero
         
         if let movie {
             self.movieModel = MovieModel(movie: movie, id: self.id, url: url, parent: self)
+            self.duration = self.movieModel!.movie!.duration
         }
     }
     
@@ -105,6 +107,7 @@ class MovieViewModel: Identifiable {
     }
     
     var currentTime: CMTime
+    var duration: CMTime
     
     func seek(to time: CMTime) async {
         if let player = self.player {
@@ -135,13 +138,6 @@ class MovieViewModel: Identifiable {
             let nextTime = try await getPreviousInterestingTime(before: self.currentTime)
             await self.seek(to: nextTime)
         }
-    }
-    
-    var duration: CMTime {
-        if let playerItem = self.playerItem {
-            return playerItem.duration
-        }
-        return .zero
     }
     
     // editing functions
@@ -190,7 +186,8 @@ class MovieViewModel: Identifiable {
             if let movie = self.movieModel?.movie {
                 let newPlayerItem = AVPlayerItem(asset: movie)
                 player.replaceCurrentItem(with: newPlayerItem)
-                // TODO: do thumb and player.currentTime() remain the same? If not, make it so.
+                // refresh some viewModel ideas from the modified movie
+                self.duration = movie.duration
             }
             else {
                 player.replaceCurrentItem(with: nil)
