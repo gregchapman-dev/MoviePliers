@@ -6,17 +6,34 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		178E91B92EDE267200407E45 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 178E91AD2EDE267200407E45 /* Assets.xcassets */; };
+		178E91BA2EDE267200407E45 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91AE2EDE267200407E45 /* ContentView.swift */; };
+		178E91BB2EDE267200407E45 /* MenuCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91AF2EDE267200407E45 /* MenuCommands.swift */; };
+		178E91BC2EDE267200407E45 /* MovieModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B02EDE267200407E45 /* MovieModel.swift */; };
+		178E91BD2EDE267200407E45 /* MoviePlayerControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B12EDE267200407E45 /* MoviePlayerControlsView.swift */; };
+		178E91BE2EDE267200407E45 /* MoviePliersApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B22EDE267200407E45 /* MoviePliersApp.swift */; };
+		178E91BF2EDE267200407E45 /* MovieStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B32EDE267200407E45 /* MovieStore.swift */; };
+		178E91C02EDE267200407E45 /* MovieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B42EDE267200407E45 /* MovieView.swift */; };
+		178E91C12EDE267200407E45 /* MovieViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B52EDE267200407E45 /* MovieViewModel.swift */; };
+		178E91C22EDE267200407E45 /* MutableMovie.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B62EDE267200407E45 /* MutableMovie.swift */; };
+		178E91C32EDE267200407E45 /* SelectableRangeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B72EDE267200407E45 /* SelectableRangeSlider.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		178E91AD2EDE267200407E45 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		178E91AE2EDE267200407E45 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		178E91AF2EDE267200407E45 /* MenuCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuCommands.swift; sourceTree = "<group>"; };
+		178E91B02EDE267200407E45 /* MovieModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieModel.swift; sourceTree = "<group>"; };
+		178E91B12EDE267200407E45 /* MoviePlayerControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoviePlayerControlsView.swift; sourceTree = "<group>"; };
+		178E91B22EDE267200407E45 /* MoviePliersApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoviePliersApp.swift; sourceTree = "<group>"; };
+		178E91B32EDE267200407E45 /* MovieStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieStore.swift; sourceTree = "<group>"; };
+		178E91B42EDE267200407E45 /* MovieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieView.swift; sourceTree = "<group>"; };
+		178E91B52EDE267200407E45 /* MovieViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieViewModel.swift; sourceTree = "<group>"; };
+		178E91B62EDE267200407E45 /* MutableMovie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MutableMovie.swift; sourceTree = "<group>"; };
+		178E91B72EDE267200407E45 /* SelectableRangeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableRangeSlider.swift; sourceTree = "<group>"; };
 		17D18D6F2EAED627008B239E /* MoviePliers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoviePliers.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		17D18D712EAED627008B239E /* MoviePliers */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MoviePliers;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		17D18D6C2EAED627008B239E /* Frameworks */ = {
@@ -29,10 +46,28 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		178E91B82EDE267200407E45 /* MoviePliers */ = {
+			isa = PBXGroup;
+			children = (
+				178E91AD2EDE267200407E45 /* Assets.xcassets */,
+				178E91B22EDE267200407E45 /* MoviePliersApp.swift */,
+				178E91AF2EDE267200407E45 /* MenuCommands.swift */,
+				178E91AE2EDE267200407E45 /* ContentView.swift */,
+				178E91B12EDE267200407E45 /* MoviePlayerControlsView.swift */,
+				178E91B72EDE267200407E45 /* SelectableRangeSlider.swift */,
+				178E91B52EDE267200407E45 /* MovieViewModel.swift */,
+				178E91B02EDE267200407E45 /* MovieModel.swift */,
+				178E91B32EDE267200407E45 /* MovieStore.swift */,
+				178E91B42EDE267200407E45 /* MovieView.swift */,
+				178E91B62EDE267200407E45 /* MutableMovie.swift */,
+			);
+			path = MoviePliers;
+			sourceTree = "<group>";
+		};
 		17D18D662EAED627008B239E = {
 			isa = PBXGroup;
 			children = (
-				17D18D712EAED627008B239E /* MoviePliers */,
+				178E91B82EDE267200407E45 /* MoviePliers */,
 				17D18D702EAED627008B239E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,9 +94,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				17D18D712EAED627008B239E /* MoviePliers */,
 			);
 			name = MoviePliers;
 			packageProductDependencies = (
@@ -109,6 +141,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				178E91B92EDE267200407E45 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +152,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				178E91BA2EDE267200407E45 /* ContentView.swift in Sources */,
+				178E91BB2EDE267200407E45 /* MenuCommands.swift in Sources */,
+				178E91BC2EDE267200407E45 /* MovieModel.swift in Sources */,
+				178E91BD2EDE267200407E45 /* MoviePlayerControlsView.swift in Sources */,
+				178E91BE2EDE267200407E45 /* MoviePliersApp.swift in Sources */,
+				178E91BF2EDE267200407E45 /* MovieStore.swift in Sources */,
+				178E91C02EDE267200407E45 /* MovieView.swift in Sources */,
+				178E91C12EDE267200407E45 /* MovieViewModel.swift in Sources */,
+				178E91C22EDE267200407E45 /* MutableMovie.swift in Sources */,
+				178E91C32EDE267200407E45 /* SelectableRangeSlider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
