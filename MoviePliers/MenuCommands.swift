@@ -22,7 +22,7 @@ struct MenuCommands: Commands {
     @FocusedBinding(\.activeMovieID) var activeMovieID // get the active movie (the one in the focused view/window
     @State private var showingFileImporter = false
     
-    func showSavePanel(suggestedFilename: String, viewModel: MovieViewModel) {
+    func showSaveAsPanel(suggestedFilename: String, viewModel: MovieViewModel) {
         let savePanel = NSSavePanel()
         savePanel.title = "Export"
         savePanel.prompt = "Save"
@@ -35,7 +35,21 @@ struct MenuCommands: Commands {
 
         if response == .OK {
             if let url = savePanel.url {
-                viewModel.save(url, selfContained: false)
+                Task {
+                    await viewModel.saveAs(url, selfContained: false)
+                }
+            }
+        }
+    }
+    
+    func saveOrSaveAs(viewModel: MovieViewModel) {
+        if viewModel.movieModel?.url == nil {
+            showSaveAsPanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+        }
+        else {
+            // movie came from a file url; save by replacing the movie header there (deleting no other data)
+            Task {
+                await viewModel.replaceMovieHeader()
             }
         }
     }
@@ -102,7 +116,7 @@ struct MenuCommands: Commands {
                 print("save")
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        showSavePanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+                        saveOrSaveAs(viewModel: viewModel)
                     }
                 }
             }
@@ -112,7 +126,7 @@ struct MenuCommands: Commands {
                 print("save as")
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        showSavePanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+                        showSaveAsPanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
                     }
                 }
             }
@@ -121,7 +135,8 @@ struct MenuCommands: Commands {
                 print("export")
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        showSavePanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+                        // TODO: replace with export panel (allowing selection of codecs, and file formats like AVI).
+                        showSaveAsPanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
                     }
                 }
             }

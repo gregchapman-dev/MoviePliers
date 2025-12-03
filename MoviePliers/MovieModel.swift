@@ -39,22 +39,25 @@ class MovieModel: Identifiable {
         return self.movie?.isModified ?? false
     }
     
-    func save(_ url: URL, selfContained: Bool = false) {
+    func fileType(for url: URL) -> AVFileType? {
+        // returns nil if url.pathExtension doesn't map to a fileType
+        if url.pathExtension == "mov" {
+            return .mov
+        }
+        if url.pathExtension == "mp4" {
+            return .mp4
+        }
+        return nil
+    }
+    
+    func saveAs(_ url: URL, selfContained: Bool = false) async {
         guard let movie = self.movie else {
             return
         }
         
-        var fileType: AVFileType
-        var theURL: URL
-        if url.pathExtension == "mov" {
-            theURL = url
-            fileType = .mov
-        }
-        else if url.pathExtension == "mp4" {
-            theURL = url
-            fileType = .mp4
-        }
-        else {
+        var theURL: URL = url
+        var fileType: AVFileType? = fileType(for: theURL)
+        if fileType == nil {
             // add .mov extension and save as .mov
             theURL = url.appendingPathExtension("mov")
             fileType = .mov
@@ -64,13 +67,39 @@ class MovieModel: Identifiable {
             if selfContained {
                 print("self-contained write not yet implemented, writing header only")
             }
-            let movieHeader: Data = try movie.makeMovieHeader(fileType: fileType)
-            try movieHeader.write(to: theURL, options: .atomic)
+            try movie.writeHeader(to: theURL, fileType: fileType!, options: .truncateDestinationToMovieHeaderOnly)
+            self.url = theURL
         }
         catch {
             print("error saving movie: \(error.localizedDescription)")
         }
-        
+    }
+    
+    func replaceMovieHeader() async {
+        guard let movie = self.movie else {
+            return
+        }
+        guard let url = self.url else {
+            return
+        }
+        do {
+            let fileType = fileType(for: url)
+            
+            if let fileType {
+                try movie.writeHeader(to: url, fileType: fileType, options: .addMovieHeaderToDestination)
+//                let newMovieHeader: Data = try movie.makeMovieHeader(fileType: fileType)
+//                // scan the file at url for 'moov'
+//                let atomParser = AtomParser(url)
+//                atomParser.replaceMoovAtom(with: newMovieHeader)
+            }
+            else {
+                print("cannot save movie header to \(url.pathExtension) file")
+                return
+            }
+        }
+        catch {
+            print("error saving movie: \(error.localizedDescription)")
+        }
     }
     
     func copy(fromTimeRange: CMTimeRange) async {

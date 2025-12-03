@@ -163,9 +163,15 @@ class MovieViewModel: Identifiable {
         self.selection = nil
     }
     
-    func save(_ url: URL, selfContained: Bool = false) {
+    func saveAs(_ url: URL, selfContained: Bool = false) async {
         if let movieModel = self.movieModel {
-            movieModel.save(url, selfContained: selfContained)
+            await movieModel.saveAs(url, selfContained: selfContained)
+        }
+    }
+    
+    func replaceMovieHeader() async {
+        if let movieModel = self.movieModel {
+            await movieModel.replaceMovieHeader()
         }
     }
     
