@@ -20,6 +20,7 @@ class MovieViewModel: Identifiable {
         self.enablePeriodicTimeObserver = true
         self.interestingTimes = []
         self.duration = .zero
+        self.isModified = false
         
         if let movie {
             self.movieModel = MovieModel(movie: movie, id: self.id, url: url, parent: self)
@@ -84,9 +85,7 @@ class MovieViewModel: Identifiable {
         return "New Movie"
     }
     
-    var isModified: Bool {
-        return self.movieModel?.isModified ?? false
-    }
+    var isModified: Bool
     
     var isPlaying: Bool {
         if let player = self.player {
@@ -151,7 +150,7 @@ class MovieViewModel: Identifiable {
     }
     
     func select(_ selection: CMTimeRange) {
-        if !selection.isValid {
+        if !selection.isValid || selection.isEmpty {
             self.selection = nil
         }
         else {
@@ -164,40 +163,54 @@ class MovieViewModel: Identifiable {
     }
     
     func saveAs(_ url: URL, selfContained: Bool = false) async {
-        if let movieModel = self.movieModel {
-            await movieModel.saveAs(url, selfContained: selfContained)
-        }
+        guard let movieModel = self.movieModel else { return }
+        
+        await movieModel.saveAs(url, selfContained: selfContained)
+        self.isModified = false
     }
     
     func replaceMovieHeader() async {
-        if let movieModel = self.movieModel {
-            await movieModel.replaceMovieHeader()
-        }
+        guard let movieModel = self.movieModel else { return }
+        
+        await movieModel.replaceMovieHeader()
+        self.isModified = false
     }
     
     func copy() async {
-        if self.movieModel != nil && self.selection != nil {
-            await self.movieModel!.copy(fromTimeRange: self.selection!)
-        }
+        guard let movieModel = self.movieModel, let selection = self.selection else { return }
+        
+        await movieModel.copy(fromTimeRange: selection)
     }
     
+    func paste() async {
+        guard let movieModel = self.movieModel else { return }
+        await movieModel.paste(at: self.currentTime)
+        self.isModified = true
+    }
+
     func add() async {
-        if let movieModel = self.movieModel {
-            await movieModel.add()
-        }
+        guard let movieModel = self.movieModel else { return }
+        
+        await movieModel.add()
+        self.isModified = true
     }
     
     func movieDidChange() {
-        if let player = self.player {
-            if let movie = self.movieModel?.movie {
-                let newPlayerItem = AVPlayerItem(asset: movie)
-                player.replaceCurrentItem(with: newPlayerItem)
-                // refresh some viewModel ideas from the modified movie
-                self.duration = movie.duration
-            }
-            else {
-                player.replaceCurrentItem(with: nil)
-            }
+        guard let player = self.player else { return }
+        
+        if let movie = self.movieModel?.movie {
+            let newPlayerItem = AVPlayerItem(asset: movie)
+            player.replaceCurrentItem(with: newPlayerItem)
+            // refresh some viewModel ideas from the modified movie
+            self.duration = movie.duration
         }
+        else {
+            player.replaceCurrentItem(with: nil)
+        }
+    }
+    
+    func runCursorTest() async {
+        guard let movieModel = self.movieModel else { return }
+        await movieModel.runCursorTest()
     }
 }

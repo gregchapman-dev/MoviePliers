@@ -96,7 +96,7 @@ struct MenuCommands: Commands {
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
                         if viewModel.isModified {
-                            print("need to save")
+                            saveOrSaveAs(viewModel: viewModel)
                         }
                         movieStore.removeMovieViewModel(for: viewModel.id)
                         print("removed")
@@ -166,7 +166,13 @@ struct MenuCommands: Commands {
                 }
             }.keyboardShortcut("C", modifiers: .command)
             Button("Paste") {
-                print("paste")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        Task {
+                            await viewModel.paste()
+                        }
+                    }
+                }
             }.keyboardShortcut("V", modifiers: .command)
                 .modifierKeyAlternate(.shift) {
                     Button("Replace") {
@@ -228,6 +234,16 @@ struct MenuCommands: Commands {
         }
 
         CommandMenu("Movie") {
+            Button("Run Test") {
+                print("run test")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        Task {
+                            await viewModel.runCursorTest()
+                        }
+                    }
+                }
+            }
             Button("Get Info") {
                 print("get info")
             }.keyboardShortcut("I", modifiers: .command)

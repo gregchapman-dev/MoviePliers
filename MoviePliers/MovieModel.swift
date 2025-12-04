@@ -187,6 +187,67 @@ class MovieModel: Identifiable {
             print("error: \(error)")
         }
     }
+    
+    func paste(at time: CMTime) async {
+        guard let movieHeader: Data = NSPasteboard.general.data(forType: qtMoviePasteboardType) else {
+            return
+        }
+        
+        guard let movie: AVMutableMovie = self.movie else {
+            return
+        }
+        
+        do {
+            let movieToPaste = AVMovie(data: movieHeader)
+            let tracksToPaste = try await movieToPaste.load(.tracks)
+            let duration = try await movieToPaste.load(.duration)
+            let status = movieToPaste.status(of: .tracks)
+            switch status {
+            case .loaded:
+                print("loaded value", movieToPaste.tracks)
+            default:
+                print("unexpected movieToPaste.status: \(status)")
+                return
+            }
+            for trackToPaste in tracksToPaste {
+                // find first matchingTrack in self.movie
+                var matchingTrack: AVMutableMovieTrack? = nil
+                let matchingTracks = movie.tracks(withMediaType: trackToPaste.mediaType)
+                if matchingTracks.count > 0 {
+                    matchingTrack = matchingTracks[0]
+                }
+                else {
+                    matchingTrack = movie.addMutableTrack(withMediaType: trackToPaste.mediaType, copySettingsFrom: trackToPaste)
+                }
+                if let matchingTrack {
+                    try matchingTrack.insertTimeRange(CMTimeRange(start: .zero, end: duration), of: trackToPaste, at: time, copySampleData: false)
+                }
+            }
+
+            // we apparently need to hand-notify the MovieViewModel, so it can make a new playerItem and put
+            // it in the player.
+            self.parent?.movieDidChange()
+        }
+        catch {
+            print("error: \(error)")
+        }
+    }
+    
+    func runCursorTest() async {
+        guard let movie: AVMutableMovie = self.movie else { return }
+        
+        var currentTime = CMTime.zero
+        var nextCurrentTime = CMTime.zero
+        let cursor = movie.tracks(withMediaType: .video)[0].makeSampleCursor(presentationTimeStamp: .zero)
+        while nextCurrentTime < movie.duration {
+            currentTime = nextCurrentTime
+            cursor!.stepInPresentationOrder(byCount: 1)
+            nextCurrentTime = cursor!.presentationTimeStamp
+            if nextCurrentTime - currentTime != CMTime(value: 1001, timescale: 30000) {
+                print("hey")
+            }
+        }
+    }
 }
 
 
