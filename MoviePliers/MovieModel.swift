@@ -236,15 +236,19 @@ class MovieModel: Identifiable {
     func runCursorTest() async {
         guard let movie: AVMutableMovie = self.movie else { return }
         
-        var currentTime = CMTime.zero
-        var nextCurrentTime = CMTime.zero
-        let cursor = movie.tracks(withMediaType: .video)[0].makeSampleCursor(presentationTimeStamp: .zero)
+        var currentTime: CMTime
+        var nextCurrentTime = CMTime(value: 2067065, timescale: 30000)
+        let cursor = await movie.tracks(withMediaType: .video)[0].makeTrackSampleCursor(presentationTimeStamp: nextCurrentTime)
         while nextCurrentTime < movie.duration {
+            if nextCurrentTime == CMTime(value: 6164872, timescale: 60000) {
+                print("hay")
+            }
             currentTime = nextCurrentTime
-            cursor!.stepInPresentationOrder(byCount: 1)
-            nextCurrentTime = cursor!.presentationTimeStamp
+            cursor.stepInPresentationOrder(byCount: 1)
+            nextCurrentTime = cursor.presentationTimeStamp
+            //let storageRange = cursor!.currentSampleStorageRange
             if nextCurrentTime - currentTime != CMTime(value: 1001, timescale: 30000) {
-                print("hey")
+                print("partial frame start: \(currentTime) end: \(nextCurrentTime) dur: \(nextCurrentTime - currentTime)")
             }
         }
     }
