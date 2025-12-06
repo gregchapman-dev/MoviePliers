@@ -195,9 +195,14 @@ struct MenuCommands: Commands {
                         print("add scaled")
                     }
                 }
-            Button("Delete") {
-                print("delete")
+            Button("Clear") {
+                print("clear")
             }.keyboardShortcut(.delete, modifiers: [])
+                .modifierKeyAlternate(.option) {
+                    Button("Trim") {
+                        print("trim")
+                    }
+                }
             Divider()
             Button("Select All") {
                 if let id = activeMovieID {
