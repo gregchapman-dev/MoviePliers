@@ -134,8 +134,48 @@ class MovieViewModel: Identifiable {
     
     func stepBackward() async throws {
         if self.player != nil && self.playerItem != nil {
-            let nextTime = try await getPreviousInterestingTime(before: self.currentTime)
+            let previousTime = try await getPreviousInterestingTime(before: self.currentTime)
+            await self.seek(to: previousTime)
+        }
+    }
+    
+    func getNextSelectionOrMovieBoundaryTime(after currentTime: CMTime) -> CMTime {
+        if self.selection == nil || self.selection!.isEmpty {
+            return self.duration
+        }
+        if currentTime < self.selection!.start {
+            return self.selection!.start
+        }
+        if currentTime < self.selection!.end {
+            return self.selection!.end
+        }
+        return self.duration
+    }
+        
+    func getPreviousSelectionOrMovieBoundaryTime(before currentTime: CMTime) -> CMTime {
+        if self.selection == nil || self.selection!.isEmpty {
+            return .zero
+        }
+        if currentTime > self.selection!.end {
+            return self.selection!.end
+        }
+        if currentTime > self.selection!.start {
+            return self.selection!.start
+        }
+        return .zero
+    }
+
+    func optionStepForward() async throws {
+        if self.player != nil && self.playerItem != nil {
+            let nextTime = getNextSelectionOrMovieBoundaryTime(after: self.currentTime)
             await self.seek(to: nextTime)
+        }
+    }
+    
+    func optionStepBackward() async throws {
+        if self.player != nil && self.playerItem != nil {
+            let previousTime = getPreviousSelectionOrMovieBoundaryTime(before: self.currentTime)
+            await self.seek(to: previousTime)
         }
     }
     

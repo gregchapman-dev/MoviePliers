@@ -5,6 +5,7 @@ import AVFoundation
 struct SelectableRangeSlider: View {
     @Bindable var viewModel: MovieViewModel
     @State private var shiftPressed: Bool
+    @State private var optionPressed: Bool
     @FocusState private var focused: Bool
     
     let sliderHeight: CGFloat = 10
@@ -51,8 +52,9 @@ struct SelectableRangeSlider: View {
             .focusable()
             .focused($focused)
             .focusEffectDisabled()
-            .onModifierKeysChanged(mask: .shift) { _, newFlags in
+            .onModifierKeysChanged(mask: [.shift, .option]) { _, newFlags in
                 self.shiftPressed = newFlags.contains(.shift)
+                self.optionPressed = newFlags.contains(.option)
             }
             .onKeyPress(keys: [.rightArrow]) { press in
                 handleRightArrow()
@@ -81,6 +83,7 @@ struct SelectableRangeSlider: View {
     init(viewModel: MovieViewModel) {
         self.viewModel = viewModel
         self.shiftPressed = false
+        self.optionPressed = false
     }
     
     // Convert tap point to a slider value
@@ -164,7 +167,12 @@ struct SelectableRangeSlider: View {
     func handleRightArrow() {
         Task {
             let oldMovieTime = viewModel.currentTime
-            try await viewModel.stepForward()
+            if self.optionPressed {
+                try await viewModel.optionStepForward()
+            }
+            else {
+                try await viewModel.stepForward()
+            }
             let newMovieTime = viewModel.currentTime
             handleSelection(oldTime: oldMovieTime, newTime: newMovieTime)
         }
@@ -173,7 +181,12 @@ struct SelectableRangeSlider: View {
     func handleLeftArrow() {
         Task {
             let oldMovieTime = viewModel.currentTime
-            try await viewModel.stepBackward()
+            if self.optionPressed {
+                try await viewModel.optionStepBackward()
+            }
+            else {
+                try await viewModel.stepBackward()
+            }
             let newMovieTime = viewModel.currentTime
             handleSelection(oldTime: oldMovieTime, newTime: newMovieTime)
         }
