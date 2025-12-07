@@ -179,6 +179,26 @@ class MovieViewModel: Identifiable {
         }
     }
     
+    func movieDidChange(newCurrentTime: CMTime, newSelection: CMTimeRange?) {
+        guard let player = self.player else { return }
+        
+        if let movie = self.movieModel?.movie {
+            let newPlayerItem = AVPlayerItem(asset: movie)
+            player.replaceCurrentItem(with: newPlayerItem)
+            // refresh some viewModel ideas from the modified movie
+            self.duration = movie.duration
+            self.selection = newSelection
+            Task {
+                await self.seek(to: newCurrentTime)
+            }
+        }
+        else {
+            player.replaceCurrentItem(with: nil)
+            self.duration = .zero
+            self.currentTime = .zero
+        }
+    }
+    
     // editing functions
     func selectAll() {
         if self.duration == .zero {
@@ -216,36 +236,43 @@ class MovieViewModel: Identifiable {
         self.isModified = false
     }
     
+    // editing verbs (in edit menu)
     func copy() async {
         guard let movieModel = self.movieModel, let selection = self.selection else { return }
-        
         await movieModel.copy(fromTimeRange: selection)
     }
     
     func paste() async {
         guard let movieModel = self.movieModel else { return }
-        await movieModel.paste(at: self.currentTime)
+        let pastedDuration = await movieModel.paste(at: self.currentTime)
+        if pastedDuration.isNumeric && pastedDuration > .zero {
+            self.selection = CMTimeRange(start: self.currentTime, duration: pastedDuration)
+        }
         self.isModified = true
     }
 
     func add() async {
         guard let movieModel = self.movieModel else { return }
-        
         await movieModel.add()
         self.isModified = true
     }
     
-    func movieDidChange() {
-        guard let player = self.player else { return }
-        
-        if let movie = self.movieModel?.movie {
-            let newPlayerItem = AVPlayerItem(asset: movie)
-            player.replaceCurrentItem(with: newPlayerItem)
-            // refresh some viewModel ideas from the modified movie
-            self.duration = movie.duration
+    func clear() {
+        guard let movieModel = self.movieModel, let selection = self.selection else { return }
+        let success = movieModel.clear(selection)
+        if success {
+            self.selection = nil
         }
-        else {
-            player.replaceCurrentItem(with: nil)
+    }
+    
+    func trim() {
+        guard let movieModel = self.movieModel, let movie = movieModel.movie, let selection = self.selection else {
+            return
+        }
+        let success = movieModel.trim(selection)
+        if success {
+            self.duration = movie.duration
+            self.selection = CMTimeRange(start: .zero, duration: self.duration)
         }
     }
     

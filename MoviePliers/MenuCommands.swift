@@ -96,7 +96,9 @@ struct MenuCommands: Commands {
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
                         if viewModel.isModified {
-                            saveOrSaveAs(viewModel: viewModel)
+                            //askUserSaveSaveAsNoSaveCancel(viewModel: viewModel)
+                            //saveOrSaveAs(viewModel: viewModel)
+                            print("needs to be saved")
                         }
                         movieStore.removeMovieViewModel(for: viewModel.id)
                         print("removed")
@@ -197,11 +199,21 @@ struct MenuCommands: Commands {
                 }
             Button("Clear") {
                 print("clear")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.clear()
+                    }
+                }
             }.keyboardShortcut(.delete, modifiers: [])
                 .modifierKeyAlternate(.option) {
                     Button("Trim") {
                         print("trim")
-                    }
+                        if let id = activeMovieID {
+                            if let viewModel = movieStore.getMovieViewModel(for: id) {
+                                viewModel.trim()
+                            }
+                        }
+                   }
                 }
             Divider()
             Button("Select All") {

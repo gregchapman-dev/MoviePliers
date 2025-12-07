@@ -152,6 +152,7 @@ class MovieModel: Identifiable {
     }
     
     func add() async {
+        // returns duration of added pasteboard contents
         guard let movieHeader: Data = NSPasteboard.general.data(forType: qtMoviePasteboardType) else {
             return
         }
@@ -164,14 +165,13 @@ class MovieModel: Identifiable {
             let movieToPaste = AVMovie(data: movieHeader)
             let tracksToPaste = try await movieToPaste.load(.tracks)
             let duration = try await movieToPaste.load(.duration)
-            let status = movieToPaste.status(of: .tracks)
-            switch status {
-            case .loaded:
-                print("loaded value", movieToPaste.tracks)
-            default:
-                print("unexpected movieToPaste.status: \(status)")
+            if tracksToPaste.count == 0 {
                 return
             }
+            if !duration.isNumeric {
+                return
+            }
+
             for trackToPaste in tracksToPaste {
                 // create a matchingTrack in self.movie
                 if let track = movie.addMutableTrack(withMediaType: trackToPaste.mediaType, copySettingsFrom: trackToPaste) {
@@ -179,36 +179,42 @@ class MovieModel: Identifiable {
                 }
             }
 
-            // we apparently need to hand-notify the MovieViewModel, so it can make a new playerItem and put
+            // We apparently need to hand-notify the MovieViewModel, so it can make a new playerItem and put
             // it in the player.
-            self.parent?.movieDidChange()
+            // New selection is the added timerange, and new thumb position is at the end of the add
+            let newSelection = CMTimeRange(start: .zero, duration: duration)
+            self.parent?.movieDidChange(newCurrentTime: newSelection.end, newSelection: newSelection)
+            
+            return
         }
         catch {
             print("error: \(error)")
         }
+        
+        return
     }
     
-    func paste(at time: CMTime) async {
+    func paste(at time: CMTime) async -> CMTime {
+        // returns duration of pasted pasteboard contents
         guard let movieHeader: Data = NSPasteboard.general.data(forType: qtMoviePasteboardType) else {
-            return
+            return .zero
         }
         
         guard let movie: AVMutableMovie = self.movie else {
-            return
+            return .zero
         }
         
         do {
             let movieToPaste = AVMovie(data: movieHeader)
             let tracksToPaste = try await movieToPaste.load(.tracks)
-            let duration = try await movieToPaste.load(.duration)
-            let status = movieToPaste.status(of: .tracks)
-            switch status {
-            case .loaded:
-                print("loaded value", movieToPaste.tracks)
-            default:
-                print("unexpected movieToPaste.status: \(status)")
-                return
+            let duration: CMTime = try await movieToPaste.load(.duration)
+            if tracksToPaste.count == 0 {
+                return .zero
             }
+            if !duration.isNumeric {
+                return .zero
+            }
+            
             for trackToPaste in tracksToPaste {
                 // find first matchingTrack in self.movie
                 var matchingTrack: AVMutableMovieTrack? = nil
@@ -220,17 +226,57 @@ class MovieModel: Identifiable {
                     matchingTrack = movie.addMutableTrack(withMediaType: trackToPaste.mediaType, copySettingsFrom: trackToPaste)
                 }
                 if let matchingTrack {
-                    try matchingTrack.insertTimeRange(CMTimeRange(start: .zero, end: duration), of: trackToPaste, at: time, copySampleData: false)
+                    try matchingTrack.insertTimeRange(
+                        CMTimeRange(start: .zero, duration: duration),
+                        of: trackToPaste,
+                        at: time,
+                        copySampleData: false
+                    )
                 }
             }
-
+                        
             // we apparently need to hand-notify the MovieViewModel, so it can make a new playerItem and put
             // it in the player.
-            self.parent?.movieDidChange()
+            // New selection is the pasted timerange, and new thumb position is at the end of the paste
+            let newSelection = CMTimeRange(start: time, duration: duration)
+            self.parent?.movieDidChange(newCurrentTime: newSelection.end, newSelection: newSelection)
+            
+            return duration
         }
         catch {
             print("error: \(error)")
         }
+        
+        return .zero
+    }
+    
+    func clear(_ selection: CMTimeRange) -> Bool {
+        // returns true if anything was deleted
+        guard let movie: AVMutableMovie = self.movie else { return false }
+        _delete(timeRange: selection, from: movie)
+        // New selection is nil (we cleared it), and new thumb position is where the old selection started
+        // (which is now the frame just after the cleared area).
+        self.parent?.movieDidChange(newCurrentTime: selection.start, newSelection: nil)
+        return true
+    }
+    
+    func trim(_ selection: CMTimeRange) -> Bool {
+        // returns true if anything was deleted
+        guard let movie: AVMutableMovie = self.movie else { return false }
+        let origDuration = self.movie!.duration
+
+        // delete tail first, so we don't lose track of where tail is when we delete head
+        let tailTimeRange = CMTimeRange(start: selection.end, duration: origDuration)
+        _delete(timeRange: tailTimeRange, from: movie)
+        
+        let headTimeRange = CMTimeRange(start: .zero, end: selection.start)
+        _delete(timeRange: headTimeRange, from: movie)
+        
+        return true
+    }
+    
+    func _delete(timeRange: CMTimeRange, from theMovie: AVMutableMovie) {
+        theMovie.removeTimeRange(timeRange)
     }
     
     func runCursorTest() async {
