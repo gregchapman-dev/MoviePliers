@@ -99,13 +99,18 @@ struct MenuCommands: Commands {
                             print("setting viewModel.showingDiscardDialog = true")
                             viewModel.showingDiscardDialog = true
                         }
+                        else {
+                            viewModel.window?.close()
+                        }
                     }
                     else {
                         print("no movie info for activeMovieID: \(id.uuidString)")
+                        NSApplication.shared.keyWindow?.close()
                     }
                 }
                 else {
                     print("no activeMovieID")
+                    NSApplication.shared.keyWindow?.close()
                 }
             }
             .keyboardShortcut("W", modifiers: .command)
