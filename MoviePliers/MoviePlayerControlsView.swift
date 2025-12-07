@@ -3,13 +3,31 @@ import CoreMedia
  
 struct MoviePlayerControlsView: View {
     @Binding var viewModel: MovieViewModel
-    @State private var isShowingControls = true
  
     var body: some View {
         VStack {
             // Video Player
             MovieView(viewModel: $viewModel)
             controlsView
+        }
+        .confirmationDialog("Discard changes?", isPresented: $viewModel.showingDiscardDialog) {
+            Button("Discard Changes", role: .destructive) {
+                saveOrSaveAs(viewModel: viewModel) 
+                viewModel.isModified = false
+                movieStore.removeMovieViewModel(for: viewModel.id)
+                print("removed, closing window")
+                print("viewModel.window: \(String(describing: viewModel.window))")
+                viewModel.window?.close()
+                viewModel.showingDiscardDialog = false
+            }
+            // SwiftUI automatically adds a standard cancel button if no other .cancel role button is provided
+            Button("Cancel", role: .cancel) {
+                print("cancelled")
+                print("viewModel.isModified: \(viewModel.isModified)")
+                viewModel.showingDiscardDialog = false
+            }
+        } message: {
+            Text("You have unsaved changes. Are you sure you want to discard them?")
         }
     }
  

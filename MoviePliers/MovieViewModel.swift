@@ -7,6 +7,8 @@ class MovieViewModel: Identifiable {
     var movieModel: MovieModel?
     var selection: CMTimeRange?
     var interestingTimes: [CMTime]
+    var showingDiscardDialog: Bool
+    var window: NSWindow?
 
     init(movie: AVMutableMovie? = nil, url: URL? = nil, id: UUID? = nil) {
         if let id {
@@ -21,6 +23,7 @@ class MovieViewModel: Identifiable {
         self.interestingTimes = []
         self.duration = .zero
         self.isModified = false
+        self.showingDiscardDialog = false
         
         if let movie {
             self.movieModel = MovieModel(movie: movie, id: self.id, url: url, parent: self)

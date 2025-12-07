@@ -9,6 +9,24 @@ import SwiftUI
 import AVFoundation
 import AVKit
 
+struct HostingWindowFinder: NSViewRepresentable {
+    // A callback to receive the NSWindow instance
+    var onWindowFound: (NSWindow) -> Void
+
+    func makeNSView(context: Self.Context) -> NSView {
+        let view = NSView()
+        // Use a main-thread async block to ensure the view has been added to the window hierarchy
+        DispatchQueue.main.async { [weak view] in
+            if let window = view?.window {
+                onWindowFound(window)
+            }
+        }
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
 struct ContentView: View {
     @State private var movieViewModel: MovieViewModel
     var body: some View {
@@ -17,6 +35,11 @@ struct ContentView: View {
             MoviePlayerControlsView(viewModel: $movieViewModel)
         }
         .focusedSceneValue(\.activeMovieID, $movieViewModel.id) // stash off active movieID (when we have focus)
+        .background(
+            HostingWindowFinder { window in
+                movieViewModel.window = window
+            }
+        )
     }
 
     init(movieID theID: UUID) {

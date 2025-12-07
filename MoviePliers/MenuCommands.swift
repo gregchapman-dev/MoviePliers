@@ -15,44 +15,44 @@ extension FocusedValues {
     }
 }
 
+func showSaveAsPanel(suggestedFilename: String, viewModel: MovieViewModel) {
+    let savePanel = NSSavePanel()
+    savePanel.title = "Export"
+    savePanel.prompt = "Save"
+    savePanel.nameFieldStringValue = suggestedFilename
+    savePanel.canCreateDirectories = true
+    savePanel.allowedContentTypes = [.quickTimeMovie, .mpeg4Movie]
+
+    // Run the panel modally
+    let response = savePanel.runModal()
+
+    if response == .OK {
+        if let url = savePanel.url {
+            Task {
+                await viewModel.saveAs(url, selfContained: false)
+            }
+        }
+    }
+}
+
+func saveOrSaveAs(viewModel: MovieViewModel) {
+    if viewModel.movieModel?.url == nil {
+        showSaveAsPanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+    }
+    else {
+        // movie came from a file url; save by replacing the movie header there (deleting no other data)
+        Task {
+            await viewModel.replaceMovieHeader()
+        }
+    }
+}
+
 var movieStore = MovieStore()
 
 struct MenuCommands: Commands {
     @Environment(\.openWindow) private var openWindow
     @FocusedBinding(\.activeMovieID) var activeMovieID // get the active movie (the one in the focused view/window
     @State private var showingFileImporter = false
-    
-    func showSaveAsPanel(suggestedFilename: String, viewModel: MovieViewModel) {
-        let savePanel = NSSavePanel()
-        savePanel.title = "Export"
-        savePanel.prompt = "Save"
-        savePanel.nameFieldStringValue = suggestedFilename
-        savePanel.canCreateDirectories = true
-        savePanel.allowedContentTypes = [.quickTimeMovie, .mpeg4Movie]
-
-        // Run the panel modally
-        let response = savePanel.runModal()
-
-        if response == .OK {
-            if let url = savePanel.url {
-                Task {
-                    await viewModel.saveAs(url, selfContained: false)
-                }
-            }
-        }
-    }
-    
-    func saveOrSaveAs(viewModel: MovieViewModel) {
-        if viewModel.movieModel?.url == nil {
-            showSaveAsPanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
-        }
-        else {
-            // movie came from a file url; save by replacing the movie header there (deleting no other data)
-            Task {
-                await viewModel.replaceMovieHeader()
-            }
-        }
-    }
     
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -96,12 +96,9 @@ struct MenuCommands: Commands {
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
                         if viewModel.isModified {
-                            //askUserSaveSaveAsNoSaveCancel(viewModel: viewModel)
-                            //saveOrSaveAs(viewModel: viewModel)
-                            print("needs to be saved")
+                            print("setting viewModel.showingDiscardDialog = true")
+                            viewModel.showingDiscardDialog = true
                         }
-                        movieStore.removeMovieViewModel(for: viewModel.id)
-                        print("removed")
                     }
                     else {
                         print("no movie info for activeMovieID: \(id.uuidString)")
@@ -110,7 +107,6 @@ struct MenuCommands: Commands {
                 else {
                     print("no activeMovieID")
                 }
-                NSApplication.shared.keyWindow?.close()
             }
             .keyboardShortcut("W", modifiers: .command)
 
