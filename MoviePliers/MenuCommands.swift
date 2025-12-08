@@ -100,7 +100,14 @@ struct MenuCommands: Commands {
                             viewModel.showingDiscardDialog = true
                         }
                         else {
-                            viewModel.window?.close()
+                            if viewModel.window != nil {
+                                print("closing window for viewModel")
+                                viewModel.window?.close()
+                            }
+                            else {
+                                print("no window for viewModel, closing keywindow")
+                                NSApplication.shared.keyWindow?.close()
+                            }
                         }
                     }
                     else {

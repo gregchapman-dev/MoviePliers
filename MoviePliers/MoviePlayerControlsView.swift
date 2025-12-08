@@ -12,13 +12,11 @@ struct MoviePlayerControlsView: View {
         }
         .confirmationDialog("Discard changes?", isPresented: $viewModel.showingDiscardDialog) {
             Button("Discard Changes", role: .destructive) {
-                saveOrSaveAs(viewModel: viewModel) 
-                viewModel.isModified = false
-                movieStore.removeMovieViewModel(for: viewModel.id)
                 print("removed, closing window")
                 print("viewModel.window: \(String(describing: viewModel.window))")
                 viewModel.window?.close()
                 viewModel.showingDiscardDialog = false
+                movieStore.removeMovieViewModel(for: viewModel.id)
             }
             // SwiftUI automatically adds a standard cancel button if no other .cancel role button is provided
             Button("Cancel", role: .cancel) {
