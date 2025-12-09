@@ -204,6 +204,51 @@ class MovieViewModel: Identifiable {
         }
     }
     
+    func showSaveAsPanel(suggestedFilename: String) {
+        let savePanel = NSSavePanel()
+        savePanel.title = "Export"
+        savePanel.prompt = "Save"
+        savePanel.nameFieldStringValue = suggestedFilename
+        savePanel.canCreateDirectories = true
+        savePanel.allowedContentTypes = [.quickTimeMovie, .mpeg4Movie]
+
+        // Run the panel modally
+        let response = savePanel.runModal()
+
+        if response == .OK {
+            if let url = savePanel.url {
+                self.saveAs(url, selfContained: false)
+            }
+        }
+    }
+
+    func saveOrSaveAs() {
+        if self.movieModel?.url == nil {
+            self.showSaveAsPanel(suggestedFilename: "New Movie.mov")
+        }
+        else {
+            // movie came from a file url; save by replacing the movie header there (deleting no other data)
+            self.replaceMovieHeader()
+        }
+    }
+    
+    func closeView() {
+        if self.isModified {
+            print("setting viewModel.showingDiscardDialog = true")
+            self.showingDiscardDialog = true
+        }
+        else {
+            if self.window != nil {
+                print("closing window for viewModel")
+                self.window?.close()
+            }
+            else {
+                print("no window for viewModel, closing keywindow")
+                NSApplication.shared.keyWindow?.close()
+            }
+        }
+    }
+    
     // editing functions
     func selectAll() {
         if self.duration == .zero {
@@ -227,34 +272,72 @@ class MovieViewModel: Identifiable {
         self.selection = nil
     }
     
-    func saveAs(_ url: URL, selfContained: Bool = false) async {
+    func saveAs(_ url: URL, selfContained: Bool = false) {
         guard let movieModel = self.movieModel else { return }
         
-        await movieModel.saveAs(url, selfContained: selfContained)
-        self.isModified = false
+        Task {
+            await movieModel.saveAs(url, selfContained: selfContained)
+            self.isModified = false
+        }
     }
     
-    func replaceMovieHeader() async {
+    func replaceMovieHeader() {
         guard let movieModel = self.movieModel else { return }
         
-        await movieModel.replaceMovieHeader()
-        self.isModified = false
+        Task {
+            await movieModel.replaceMovieHeader()
+            self.isModified = false
+        }
     }
     
     // editing verbs (in edit menu)
-    func copy() async {
+    func copy() {
         guard let movieModel = self.movieModel, let selection = self.selection else { return }
-        await movieModel.copy(fromTimeRange: selection)
+
+        Task {
+            await movieModel.copy(fromTimeRange: selection)
+        }
     }
     
-    func paste() async {
+    func cut() {
+        guard let movieModel = self.movieModel, let selection = self.selection else { return }
+        
+        Task {
+            await movieModel.copy(fromTimeRange: selection, andClear: true)
+        }
+    }
+    
+    func paste() {
         guard let movieModel = self.movieModel else { return }
-        await movieModel.paste(at: self.currentTime)
+        
+        Task {
+            await movieModel.paste(at: self.currentTime)
+        }
     }
 
-    func add() async {
+    func add() {
         guard let movieModel = self.movieModel else { return }
-        await movieModel.add()
+        
+        Task {
+            await movieModel.add()
+        }
+    }
+    
+    func addScaled() {
+        guard let movieModel = self.movieModel else { return }
+        Task {
+            // nil selection is ok, it means to scale to the entire movie duration
+            await movieModel.addScaled(toTimeRange: self.selection)
+        }
+    }
+    
+    func replace() {
+        // paste, replacing current selection time range
+        guard let movieModel = self.movieModel, let selection = self.selection else { return }
+        Task {
+            // nil selection NOT OK, because we're supposed to paste at selection.start
+            await movieModel.replace(selection)
+        }
     }
     
     func clear() {
@@ -263,14 +346,16 @@ class MovieViewModel: Identifiable {
     }
     
     func trim() {
-        guard let movieModel = self.movieModel, let movie = movieModel.movie, let selection = self.selection else {
+        guard let movieModel = self.movieModel, let selection = self.selection else {
             return
         }
         movieModel.trim(selection)
     }
     
-    func runCursorTest() async {
+    func runCursorTest() {
         guard let movieModel = self.movieModel else { return }
-        await movieModel.runCursorTest()
+        Task {
+            await movieModel.runCursorTest()
+        }
     }
 }

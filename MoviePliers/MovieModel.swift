@@ -102,7 +102,7 @@ class MovieModel: Identifiable {
         }
     }
     
-    func copy(fromTimeRange: CMTimeRange) async {
+    func copy(fromTimeRange: CMTimeRange, andClear: Bool = false) async {
         guard let movie = self.movie else {
             return
         }
@@ -141,6 +141,9 @@ class MovieModel: Identifiable {
             let result = NSPasteboard.general.setData(movieHeader, forType: qtMoviePasteboardType)
             if result {
                 print("copy: succeeded")
+                if andClear {
+                    _delete(timeRange: fromTimeRange, from: movie)
+                }
             }
             else {
                 print("copy: failed")
@@ -150,9 +153,9 @@ class MovieModel: Identifiable {
             print("copy failed: \(error) from movieID: \(self.id)")
         }
     }
-    
-    func add() async {
-        // returns duration of added pasteboard contents
+
+    func add(scaledToTimeRange: CMTimeRange? = nil) async {
+        // scaledToTimeRange == nil means just do an add.  addScaled() will never pass nil.
         guard let movieHeader: Data = NSPasteboard.general.data(forType: qtMoviePasteboardType) else {
             return
         }
@@ -192,6 +195,16 @@ class MovieModel: Identifiable {
         }
         
         return
+    }
+    
+    func addScaled(toTimeRange: CMTimeRange?) async {
+        // if selection is nil, addScaled scales to the movie duration 
+        // (Stern & Lettieri, p. 77)
+        var selection = toTimeRange
+        if selection == nil {
+            selection = CMTimeRange(start: .zero, duration: self.movie!.duration)
+        }
+        await add(scaledToTimeRange: selection)
     }
     
     func paste(at time: CMTime) async {
@@ -245,6 +258,13 @@ class MovieModel: Identifiable {
         }
         
         return
+    }
+    
+    func replace(_ selection: CMTimeRange) async {
+        // first clear selection, then paste at selection.start
+        guard let movie: AVMutableMovie = self.movie else { return }
+        _delete(timeRange: selection, from: movie)
+        await paste(at: selection.start)
     }
     
     func clear(_ selection: CMTimeRange) {

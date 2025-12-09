@@ -15,38 +15,6 @@ extension FocusedValues {
     }
 }
 
-func showSaveAsPanel(suggestedFilename: String, viewModel: MovieViewModel) {
-    let savePanel = NSSavePanel()
-    savePanel.title = "Export"
-    savePanel.prompt = "Save"
-    savePanel.nameFieldStringValue = suggestedFilename
-    savePanel.canCreateDirectories = true
-    savePanel.allowedContentTypes = [.quickTimeMovie, .mpeg4Movie]
-
-    // Run the panel modally
-    let response = savePanel.runModal()
-
-    if response == .OK {
-        if let url = savePanel.url {
-            Task {
-                await viewModel.saveAs(url, selfContained: false)
-            }
-        }
-    }
-}
-
-func saveOrSaveAs(viewModel: MovieViewModel) {
-    if viewModel.movieModel?.url == nil {
-        showSaveAsPanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
-    }
-    else {
-        // movie came from a file url; save by replacing the movie header there (deleting no other data)
-        Task {
-            await viewModel.replaceMovieHeader()
-        }
-    }
-}
-
 var movieStore = MovieStore()
 
 struct MenuCommands: Commands {
@@ -91,42 +59,20 @@ struct MenuCommands: Commands {
         }
         CommandGroup(replacing: .saveItem) {
             Button("Close") {
-                print("close movie")
                 // print("activeMovieID = \($activeMovieInfo.id.uuidString)")
-                if let id = activeMovieID {
-                    if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        if viewModel.isModified {
-                            print("setting viewModel.showingDiscardDialog = true")
-                            viewModel.showingDiscardDialog = true
-                        }
-                        else {
-                            if viewModel.window != nil {
-                                print("closing window for viewModel")
-                                viewModel.window?.close()
-                            }
-                            else {
-                                print("no window for viewModel, closing keywindow")
-                                NSApplication.shared.keyWindow?.close()
-                            }
-                        }
-                    }
-                    else {
-                        print("no movie info for activeMovieID: \(id.uuidString)")
-                        NSApplication.shared.keyWindow?.close()
-                    }
+                if let id = activeMovieID, let viewModel = movieStore.getMovieViewModel(for: id) {
+                    viewModel.closeView()
+                    return
                 }
-                else {
-                    print("no activeMovieID")
-                    NSApplication.shared.keyWindow?.close()
-                }
+                print("no activeMovieID or no viewModel for activeMovieID, closing key window instead")
+                NSApplication.shared.keyWindow?.close()
             }
             .keyboardShortcut("W", modifiers: .command)
 
             Button("Save") {
-                print("save")
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        saveOrSaveAs(viewModel: viewModel)
+                        viewModel.saveOrSaveAs()
                     }
                 }
             }
@@ -136,7 +82,7 @@ struct MenuCommands: Commands {
                 print("save as")
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        showSaveAsPanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+                        viewModel.showSaveAsPanel(suggestedFilename: "New Movie.mov")
                     }
                 }
             }
@@ -146,7 +92,7 @@ struct MenuCommands: Commands {
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
                         // TODO: replace with export panel (allowing selection of codecs, and file formats like AVI).
-                        showSaveAsPanel(suggestedFilename: "New Movie.mov", viewModel: viewModel)
+                        viewModel.showSaveAsPanel(suggestedFilename: "New Movie.mov")
                     }
                 }
             }
@@ -163,50 +109,55 @@ struct MenuCommands: Commands {
 
         CommandGroup(replacing: .pasteboard) {
             Button("Cut") {
-                print("cut")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.cut()
+                    }
+                }
             }.keyboardShortcut("X", modifiers: .command)
 
             Button("Copy") {
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        Task {
-                            await viewModel.copy()
-                        }
+                        viewModel.copy()
                     }
                 }
             }.keyboardShortcut("C", modifiers: .command)
             Button("Paste") {
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        Task {
-                            await viewModel.paste()
-                        }
+                        viewModel.paste()
                     }
                 }
             }.keyboardShortcut("V", modifiers: .command)
                 .modifierKeyAlternate(.shift) {
                     Button("Replace") {
-                        print("replace")
+                        if let id = activeMovieID {
+                            if let viewModel = movieStore.getMovieViewModel(for: id) {
+                                viewModel.replace()
+                            }
+                        }
                     }
                 }
                 .modifierKeyAlternate(.option) {
                     Button("Add") {
                         if let id = activeMovieID {
                             if let viewModel = movieStore.getMovieViewModel(for: id) {
-                                Task {
-                                    await viewModel.add()
-                                }
+                                viewModel.add()
                             }
                         }
                     }
                 }
                 .modifierKeyAlternate([.option, .shift]) {
                     Button("Add Scaled") {
-                        print("add scaled")
+                        if let id = activeMovieID {
+                            if let viewModel = movieStore.getMovieViewModel(for: id) {
+                                viewModel.addScaled()
+                            }
+                        }
                     }
                 }
             Button("Clear") {
-                print("clear")
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
                         viewModel.clear()
@@ -215,7 +166,6 @@ struct MenuCommands: Commands {
             }.keyboardShortcut(.delete, modifiers: [])
                 .modifierKeyAlternate(.option) {
                     Button("Trim") {
-                        print("trim")
                         if let id = activeMovieID {
                             if let viewModel = movieStore.getMovieViewModel(for: id) {
                                 viewModel.trim()
@@ -263,9 +213,7 @@ struct MenuCommands: Commands {
                 print("run test")
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        Task {
-                            await viewModel.runCursorTest()
-                        }
+                        viewModel.runCursorTest()
                     }
                 }
             }
