@@ -233,19 +233,21 @@ class MovieViewModel: Identifiable {
     }
     
     func closeView() {
-        if self.isModified {
-            print("setting viewModel.showingDiscardDialog = true")
-            self.showingDiscardDialog = true
+        guard let window = self.window else {
+            print("no window for viewModel, closing keywindow")
+            NSApplication.shared.keyWindow?.close()
+            return
         }
-        else {
-            if self.window != nil {
-                print("closing window for viewModel")
-                self.window?.close()
-            }
-            else {
-                print("no window for viewModel, closing keywindow")
-                NSApplication.shared.keyWindow?.close()
-            }
+        guard let closer = self.myDelegate else {
+            // should never happen
+            print("no delegate for viewModel, closing window")
+            window.close()
+            return
+        }
+        
+        if closer.windowShouldClose!(window) {
+            print("closing window for viewModel")
+            window.close()
         }
     }
     

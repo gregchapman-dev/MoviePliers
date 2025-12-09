@@ -59,6 +59,7 @@ class WindowCloser: NSObject, NSWindowDelegate {
                 return false
             }
         }
+        
         // No unsaved changes, allow closing
         // But first, restore originalDelegate if there is one
         if self.viewModel != nil {
@@ -83,6 +84,9 @@ struct ContentView: View {
                 movieViewModel.window = window
                 movieViewModel.originalDelegate = window.delegate
                 movieViewModel.myDelegate = WindowCloser(for: movieViewModel)
+                // Setting window.delegate to our window closer, means that WindowCloser.windowShouldClose()
+                // will be called if the red bubble in the window is clicked.  Other close methods are handled
+                // more directly in movieViewModel.closeView(), which is called from Close in the menu.
                 window.delegate = movieViewModel.myDelegate
             }
         )
