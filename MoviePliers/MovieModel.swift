@@ -194,14 +194,13 @@ class MovieModel: Identifiable {
         return
     }
     
-    func paste(at time: CMTime) async -> CMTime {
-        // returns duration of pasted pasteboard contents
+    func paste(at time: CMTime) async {
         guard let movieHeader: Data = NSPasteboard.general.data(forType: qtMoviePasteboardType) else {
-            return .zero
+            return
         }
         
         guard let movie: AVMutableMovie = self.movie else {
-            return .zero
+            return
         }
         
         do {
@@ -209,10 +208,10 @@ class MovieModel: Identifiable {
             let tracksToPaste = try await movieToPaste.load(.tracks)
             let duration: CMTime = try await movieToPaste.load(.duration)
             if tracksToPaste.count == 0 {
-                return .zero
+                return
             }
             if !duration.isNumeric {
-                return .zero
+                return
             }
             
             for trackToPaste in tracksToPaste {
@@ -240,39 +239,39 @@ class MovieModel: Identifiable {
             // New selection is the pasted timerange, and new thumb position is at the end of the paste
             let newSelection = CMTimeRange(start: time, duration: duration)
             self.parent?.movieDidChange(newCurrentTime: newSelection.end, newSelection: newSelection)
-            
-            return duration
         }
         catch {
             print("error: \(error)")
         }
         
-        return .zero
+        return
     }
     
-    func clear(_ selection: CMTimeRange) -> Bool {
+    func clear(_ selection: CMTimeRange) {
         // returns true if anything was deleted
-        guard let movie: AVMutableMovie = self.movie else { return false }
+        guard let movie: AVMutableMovie = self.movie else { return }
         _delete(timeRange: selection, from: movie)
         // New selection is nil (we cleared it), and new thumb position is where the old selection started
         // (which is now the frame just after the cleared area).
         self.parent?.movieDidChange(newCurrentTime: selection.start, newSelection: nil)
-        return true
     }
     
-    func trim(_ selection: CMTimeRange) -> Bool {
+    func trim(_ selection: CMTimeRange) {
         // returns true if anything was deleted
-        guard let movie: AVMutableMovie = self.movie else { return false }
+        guard let movie: AVMutableMovie = self.movie else { return }
         let origDuration = self.movie!.duration
 
-        // delete tail first, so we don't lose track of where tail is when we delete head
+        // delete tail first, because once we delete head, tail will move
         let tailTimeRange = CMTimeRange(start: selection.end, duration: origDuration)
         _delete(timeRange: tailTimeRange, from: movie)
         
         let headTimeRange = CMTimeRange(start: .zero, end: selection.start)
         _delete(timeRange: headTimeRange, from: movie)
         
-        return true
+        self.parent?.movieDidChange(
+            newCurrentTime: selection.duration,
+            newSelection: CMTimeRange(start: .zero, duration:  selection.duration)
+        )
     }
     
     func _delete(timeRange: CMTimeRange, from theMovie: AVMutableMovie) {

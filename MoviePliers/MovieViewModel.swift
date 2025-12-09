@@ -7,8 +7,11 @@ class MovieViewModel: Identifiable {
     var movieModel: MovieModel?
     var selection: CMTimeRange?
     var interestingTimes: [CMTime]
+    var isModified: Bool
     var showingDiscardDialog: Bool
     var window: NSWindow?
+    var originalDelegate: NSWindowDelegate?
+    var myDelegate: NSWindowDelegate?
 
     init(movie: AVMutableMovie? = nil, url: URL? = nil, id: UUID? = nil) {
         if let id {
@@ -87,8 +90,6 @@ class MovieViewModel: Identifiable {
         }
         return "New Movie"
     }
-    
-    var isModified: Bool
     
     var isPlaying: Bool {
         if let player = self.player {
@@ -186,6 +187,7 @@ class MovieViewModel: Identifiable {
         guard let player = self.player else { return }
         
         if let movie = self.movieModel?.movie {
+            self.isModified = true
             let newPlayerItem = AVPlayerItem(asset: movie)
             player.replaceCurrentItem(with: newPlayerItem)
             // refresh some viewModel ideas from the modified movie
@@ -247,36 +249,24 @@ class MovieViewModel: Identifiable {
     
     func paste() async {
         guard let movieModel = self.movieModel else { return }
-        let pastedDuration = await movieModel.paste(at: self.currentTime)
-        if pastedDuration.isNumeric && pastedDuration > .zero {
-            self.selection = CMTimeRange(start: self.currentTime, duration: pastedDuration)
-        }
-        self.isModified = true
+        await movieModel.paste(at: self.currentTime)
     }
 
     func add() async {
         guard let movieModel = self.movieModel else { return }
         await movieModel.add()
-        self.isModified = true
     }
     
     func clear() {
         guard let movieModel = self.movieModel, let selection = self.selection else { return }
-        let success = movieModel.clear(selection)
-        if success {
-            self.selection = nil
-        }
+        movieModel.clear(selection)
     }
     
     func trim() {
         guard let movieModel = self.movieModel, let movie = movieModel.movie, let selection = self.selection else {
             return
         }
-        let success = movieModel.trim(selection)
-        if success {
-            self.duration = movie.duration
-            self.selection = CMTimeRange(start: .zero, duration: self.duration)
-        }
+        movieModel.trim(selection)
     }
     
     func runCursorTest() async {

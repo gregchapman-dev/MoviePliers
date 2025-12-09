@@ -27,6 +27,49 @@ struct HostingWindowFinder: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {}
 }
 
+// This is for intercepting clicks on the red "close" bubble in the window
+class WindowCloser: NSObject, NSWindowDelegate {
+    let viewModel: MovieViewModel?
+
+    init(for viewModel: MovieViewModel?) {
+        self.viewModel = viewModel
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        if self.viewModel != nil && self.viewModel!.isModified {
+            // Show alert and get user decision
+            let alert = NSAlert()
+            alert.messageText = "Discard changes?"
+            alert.informativeText = "You have unsaved changes. Do you want to discard them and close the window?"
+            alert.addButton(withTitle: "Discard Changes")
+            alert.addButton(withTitle: "Cancel")
+            
+            // Display the alert modally
+            let response = alert.runModal()
+
+            if response == .alertFirstButtonReturn {
+                // User chose "Discard Changes", allow closing
+                // But first restore originalDelegate (if there is one)
+                if let originalDelegate = self.viewModel!.originalDelegate {
+                    sender.delegate = originalDelegate
+                }
+                return true
+            } else {
+                // User chose "Cancel", prevent closing
+                return false
+            }
+        }
+        // No unsaved changes, allow closing
+        // But first, restore originalDelegate if there is one
+        if self.viewModel != nil {
+            if let originalDelegate = self.viewModel!.originalDelegate {
+                sender.delegate = originalDelegate
+            }
+        }
+        return true
+    }
+}
+
 struct ContentView: View {
     @State private var movieViewModel: MovieViewModel
     var body: some View {
@@ -38,6 +81,9 @@ struct ContentView: View {
         .background(
             HostingWindowFinder { window in
                 movieViewModel.window = window
+                movieViewModel.originalDelegate = window.delegate
+                movieViewModel.myDelegate = WindowCloser(for: movieViewModel)
+                window.delegate = movieViewModel.myDelegate
             }
         )
     }
