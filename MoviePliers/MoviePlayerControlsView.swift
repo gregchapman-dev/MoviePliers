@@ -18,7 +18,6 @@ struct MoviePlayerControlsView: View {
             Button(action: viewModel.togglePlayPause) {
                 Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
                     .font(.title)
-                    .foregroundColor(.black)
             }
             
             // Timeline

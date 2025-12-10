@@ -5,6 +5,7 @@ import AppKit
 class MovieViewModel: Identifiable {
     var id: UUID
     var movieModel: MovieModel?
+    var isLoaded: Bool
     var currentTime: CMTime
     var duration: CMTime
     var selection: CMTimeRange?
@@ -32,11 +33,11 @@ class MovieViewModel: Identifiable {
         self.enablePeriodicTimeObserver = true
         self.interestingTimes = []
         self.duration = .zero
+        self.isLoaded = false
         self.isModified = false
         
         if let movie {
             self.movieModel = MovieModel(movie: movie, id: self.id, url: url, parent: self)
-            self.duration = self.movieModel!.movie!.duration
         }
     }
     
@@ -83,7 +84,7 @@ class MovieViewModel: Identifiable {
                     if !self!.enablePeriodicTimeObserver {
                         return
                     }
-                    self?.currentTime = time
+                    self!.currentTime = time
                 }
             }
 
@@ -183,6 +184,13 @@ class MovieViewModel: Identifiable {
         if self.player != nil && self.playerItem != nil {
             let previousTime = getPreviousSelectionOrMovieBoundaryTime(before: self.currentTime)
             await self.seek(to: previousTime)
+        }
+    }
+    
+    func movieDidLoad() {
+        if let movie = self.movieModel?.movie {
+            self.duration = movie.duration
+            self.isLoaded = true
         }
     }
     

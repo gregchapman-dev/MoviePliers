@@ -31,6 +31,11 @@ class MovieModel: Identifiable {
         }
         if let movie {
             self.movie = movie
+            Task {
+                let duration = try? await movie.load(.duration)
+                let tracks = try? await movie.load(.tracks)
+                parent!.movieDidLoad()
+            }
         }
     }
         
