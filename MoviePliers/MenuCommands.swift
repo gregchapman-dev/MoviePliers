@@ -191,13 +191,25 @@ struct MenuCommands: Commands {
             }.keyboardShortcut("D", modifiers: .command)
             Divider()
             Button("Extract Tracks...") {
-                print("extract tracks")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.extractTracksIsPresented = true
+                    }
+                }
             }
             Button("Delete Tracks...") {
-                print("delete tracks")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.deleteTracksIsPresented = true
+                    }
+                }
             }
             Button("Enable Tracks...") {
-                print("enable tracks")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.enableTracksIsPresented = true
+                    }
+                }
             }
             Divider()
             Button("Find...") {

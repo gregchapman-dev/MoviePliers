@@ -10,23 +10,6 @@ struct MoviePlayerControlsView: View {
             MovieView(viewModel: $viewModel)
             controlsView
         }
-        .confirmationDialog("Discard changes?", isPresented: $viewModel.showingDiscardDialog) {
-            Button("Discard Changes", role: .destructive) {
-                print("removed, closing window")
-                print("viewModel.window: \(String(describing: viewModel.window))")
-                viewModel.window?.close()
-                viewModel.showingDiscardDialog = false
-                movieStore.removeMovieViewModel(for: viewModel.id)
-            }
-            // SwiftUI automatically adds a standard cancel button if no other .cancel role button is provided
-            Button("Cancel", role: .cancel) {
-                print("cancelled")
-                print("viewModel.isModified: \(viewModel.isModified)")
-                viewModel.showingDiscardDialog = false
-            }
-        } message: {
-            Text("You have unsaved changes. Are you sure you want to discard them?")
-        }
     }
  
     private var controlsView: some View {

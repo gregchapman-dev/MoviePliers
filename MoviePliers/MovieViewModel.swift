@@ -8,7 +8,12 @@ class MovieViewModel: Identifiable {
     var selection: CMTimeRange?
     var interestingTimes: [CMTime]
     var isModified: Bool
-    var showingDiscardDialog: Bool
+    
+    // various sheets that can be presented
+    var extractTracksIsPresented: Bool = false
+    var enableTracksIsPresented: Bool = false
+    var deleteTracksIsPresented: Bool = false
+
     var window: NSWindow?
     var originalDelegate: NSWindowDelegate?
     var myDelegate: NSWindowDelegate?
@@ -26,7 +31,6 @@ class MovieViewModel: Identifiable {
         self.interestingTimes = []
         self.duration = .zero
         self.isModified = false
-        self.showingDiscardDialog = false
         
         if let movie {
             self.movieModel = MovieModel(movie: movie, id: self.id, url: url, parent: self)

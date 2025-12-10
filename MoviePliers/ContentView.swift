@@ -72,22 +72,34 @@ class WindowCloser: NSObject, NSWindowDelegate {
 }
 
 struct ContentView: View {
-    @State private var movieViewModel: MovieViewModel
+    @State private var viewModel: MovieViewModel
     var body: some View {
         VStack {
-            Text("movieID: \(movieViewModel.id)")
-            MoviePlayerControlsView(viewModel: $movieViewModel)
+            Text("movieID: \(viewModel.id)")
+            MoviePlayerControlsView(viewModel: $viewModel)
         }
-        .focusedSceneValue(\.activeMovieID, $movieViewModel.id) // stash off active movieID (when we have focus)
+        .focusedSceneValue(\.activeMovieID, $viewModel.id) // stash off active movieID (when we have focus)
+        .sheet(isPresented: $viewModel.extractTracksIsPresented) {
+            // Present the extract tracks dialog when appropriate
+            ExtractTracksDialogView(viewModel: $viewModel)
+        }
+        .sheet(isPresented: $viewModel.enableTracksIsPresented) {
+            // Present the enable tracks dialog when appropriate
+            EnableTracksDialogView(viewModel: $viewModel)
+        }
+        .sheet(isPresented: $viewModel.deleteTracksIsPresented) {
+            // Present the delete tracks dialog when appropriate
+            DeleteTracksDialogView(viewModel: $viewModel)
+        }
         .background(
             HostingWindowFinder { window in
-                movieViewModel.window = window
-                movieViewModel.originalDelegate = window.delegate
-                movieViewModel.myDelegate = WindowCloser(for: movieViewModel)
+                viewModel.window = window
+                viewModel.originalDelegate = window.delegate
+                viewModel.myDelegate = WindowCloser(for: viewModel)
                 // Setting window.delegate to our window closer, means that WindowCloser.windowShouldClose()
                 // will be called if the red bubble in the window is clicked.  Other close methods are handled
-                // more directly in movieViewModel.closeView(), which is called from Close in the menu.
-                window.delegate = movieViewModel.myDelegate
+                // more directly in viewModel.closeView(), which is called from Close in the menu.
+                window.delegate = viewModel.myDelegate
             }
         )
     }
@@ -96,11 +108,11 @@ struct ContentView: View {
         if !movieStore.contains(theID) {
             print("no movie (window going away, or preview)")
             // Just make one without contents (don't put it in the movieStore)
-            self.movieViewModel = MovieViewModel()
+            self.viewModel = MovieViewModel()
         }
         else {
-            self.movieViewModel = movieStore.getMovieViewModel(for: theID)!
-            print("ContentView movie ID = \(self.movieViewModel.id)")
+            self.viewModel = movieStore.getMovieViewModel(for: theID)!
+            print("ContentView movie ID = \(self.viewModel.id)")
         }
     }
 
