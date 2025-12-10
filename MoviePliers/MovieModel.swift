@@ -34,11 +34,7 @@ class MovieModel: Identifiable {
         }
     }
         
-    // editing operations
-    var isModified: Bool {
-        return self.movie?.isModified ?? false
-    }
-    
+    // saving operations
     func fileType(for url: URL) -> AVFileType? {
         // returns nil if url.pathExtension doesn't map to a fileType
         if url.pathExtension == "mov" {
@@ -102,6 +98,7 @@ class MovieModel: Identifiable {
         }
     }
     
+    // editing operations
     func copy(fromTimeRange: CMTimeRange, andClear: Bool = false) async {
         guard let movie = self.movie else {
             return
@@ -154,8 +151,8 @@ class MovieModel: Identifiable {
         }
     }
 
-    func add(scaledToTimeRange: CMTimeRange? = nil) async {
-        // scaledToTimeRange == nil means just do an add.  addScaled() will never pass nil.
+    func add(at: CMTime, scaledToDuration: CMTime? = nil) async {
+        // scaledToDuration == nil means just do an add.  addScaled() will never pass nil.
         guard let movieHeader: Data = NSPasteboard.general.data(forType: qtMoviePasteboardType) else {
             return
         }
@@ -167,25 +164,34 @@ class MovieModel: Identifiable {
         do {
             let movieToPaste = AVMovie(data: movieHeader)
             let tracksToPaste = try await movieToPaste.load(.tracks)
-            let duration = try await movieToPaste.load(.duration)
+            var pastedDuration = try await movieToPaste.load(.duration)
             if tracksToPaste.count == 0 {
                 return
             }
-            if !duration.isNumeric {
+            if !pastedDuration.isNumeric {
                 return
             }
 
             for trackToPaste in tracksToPaste {
                 // create a matchingTrack in self.movie
                 if let track = movie.addMutableTrack(withMediaType: trackToPaste.mediaType, copySettingsFrom: trackToPaste) {
-                    try track.insertTimeRange(CMTimeRange(start: .zero, end: duration), of: trackToPaste, at: .zero, copySampleData: false)
+                    try track.insertTimeRange(
+                        CMTimeRange(start: .zero, end: pastedDuration), 
+                        of: trackToPaste, 
+                        at: at, 
+                        copySampleData: false
+                    )
+                    if let scaledToDuration {
+                        track.scaleTimeRange(
+                            CMTimeRange(start: .zero, end: pastedDuration),
+                            toDuration: scaledToDuration)
+                        pastedDuration = scaledToDuration
+                    }
                 }
             }
 
-            // We apparently need to hand-notify the MovieViewModel, so it can make a new playerItem and put
-            // it in the player.
             // New selection is the added timerange, and new thumb position is at the end of the add
-            let newSelection = CMTimeRange(start: .zero, duration: duration)
+            let newSelection = CMTimeRange(start: at, duration: pastedDuration)
             self.parent?.movieDidChange(newCurrentTime: newSelection.end, newSelection: newSelection)
             
             return
@@ -197,14 +203,34 @@ class MovieModel: Identifiable {
         return
     }
     
-    func addScaled(toTimeRange: CMTimeRange?) async {
-        // if selection is nil, addScaled scales to the movie duration 
-        // (Stern & Lettieri, p. 77)
-        var selection = toTimeRange
-        if selection == nil {
-            selection = CMTimeRange(start: .zero, duration: self.movie!.duration)
+    func addScaled(at: CMTime? = nil, scaledToDuration: CMTime? = nil) async {
+        guard let movie: AVMutableMovie = self.movie else {
+            return
         }
-        await add(scaledToTimeRange: selection)
+        
+        // both params must be non-nil, or both must be nil
+        if (at == nil) != (scaledToDuration == nil) {
+            return
+        }
+        
+        // if selection (i.e. both at and scaledToDuration) is nil, addScaled scales to the movie duration
+        // (Stern & Lettieri, p. 77)
+        var atTime: CMTime
+        if at == nil {
+            atTime = .zero
+        }
+        else {
+            atTime = at!
+        }
+        
+        var duration = scaledToDuration
+        if duration == nil {
+            duration = try? await movie.load(.duration)
+        }
+        
+        if let duration {
+            await add(at: atTime, scaledToDuration: duration)
+        }
     }
     
     func paste(at time: CMTime) async {
@@ -276,22 +302,23 @@ class MovieModel: Identifiable {
         self.parent?.movieDidChange(newCurrentTime: selection.start, newSelection: nil)
     }
     
-    func trim(_ selection: CMTimeRange) {
+    func trim(_ selection: CMTimeRange) async {
         // returns true if anything was deleted
         guard let movie: AVMutableMovie = self.movie else { return }
-        let origDuration = self.movie!.duration
-
-        // delete tail first, because once we delete head, tail will move
-        let tailTimeRange = CMTimeRange(start: selection.end, duration: origDuration)
-        _delete(timeRange: tailTimeRange, from: movie)
-        
-        let headTimeRange = CMTimeRange(start: .zero, end: selection.start)
-        _delete(timeRange: headTimeRange, from: movie)
-        
-        self.parent?.movieDidChange(
-            newCurrentTime: selection.duration,
-            newSelection: CMTimeRange(start: .zero, duration:  selection.duration)
-        )
+        let origDuration: CMTime? = try? await movie.load(.duration)
+        if let origDuration {
+            // delete tail first, because once we delete head, tail will move
+            let tailTimeRange = CMTimeRange(start: selection.end, duration: origDuration)
+            _delete(timeRange: tailTimeRange, from: movie)
+            
+            let headTimeRange = CMTimeRange(start: .zero, end: selection.start)
+            _delete(timeRange: headTimeRange, from: movie)
+            
+            self.parent?.movieDidChange(
+                newCurrentTime: selection.duration,
+                newSelection: CMTimeRange(start: .zero, duration:  selection.duration)
+            )
+        }
     }
     
     func _delete(timeRange: CMTimeRange, from theMovie: AVMutableMovie) {

@@ -5,6 +5,8 @@ import AppKit
 class MovieViewModel: Identifiable {
     var id: UUID
     var movieModel: MovieModel?
+    var currentTime: CMTime
+    var duration: CMTime
     var selection: CMTimeRange?
     var interestingTimes: [CMTime]
     var isModified: Bool
@@ -112,9 +114,6 @@ class MovieViewModel: Identifiable {
             }
         }
     }
-    
-    var currentTime: CMTime
-    var duration: CMTime
     
     func seek(to time: CMTime) async {
         if let player = self.player {
@@ -325,7 +324,7 @@ class MovieViewModel: Identifiable {
         guard let movieModel = self.movieModel else { return }
         
         Task {
-            await movieModel.add()
+            await movieModel.add(at: self.currentTime)
         }
     }
     
@@ -333,7 +332,12 @@ class MovieViewModel: Identifiable {
         guard let movieModel = self.movieModel else { return }
         Task {
             // nil selection is ok, it means to scale to the entire movie duration
-            await movieModel.addScaled(toTimeRange: self.selection)
+            if self.selection == nil {
+                await movieModel.addScaled()
+            }
+            else {
+                await movieModel.addScaled(at: self.selection!.start, scaledToDuration: self.selection!.duration)
+            }
         }
     }
     
@@ -355,7 +359,9 @@ class MovieViewModel: Identifiable {
         guard let movieModel = self.movieModel, let selection = self.selection else {
             return
         }
-        movieModel.trim(selection)
+        Task {
+            await movieModel.trim(selection)
+        }
     }
     
     func runCursorTest() {
