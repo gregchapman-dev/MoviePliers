@@ -283,7 +283,7 @@ func extractTracks(viewModel: MovieViewModel, trackInfoIds: Set<UUID>) -> MovieV
     let trackMovieViewModel = movieStore.newMovieViewModel()
     for trackInfo in trackInfos {
         print("extracting: \(trackInfo.name)")
-        trackMovieViewModel.addTrack(trackInfo.track, duration: trackInfo.duration)
+        trackMovieViewModel.addTrack(trackInfo)
     }
     return trackMovieViewModel
 }
@@ -293,6 +293,10 @@ func deleteTracks(viewModel: MovieViewModel, trackInfoIds: Set<UUID>) {
 
     for trackInfo in trackInfos {
         print("deleting: \(trackInfo.name)")
-        viewModel.deleteTrack(trackInfo.track)
+        viewModel.deleteTrack(trackInfo)
     }
+}
+
+func toggleTrackEnabled(viewModel: MovieViewModel, trackInfo: TrackInfo) {
+    viewModel.toggleTrackEnabled(trackInfo)
 }

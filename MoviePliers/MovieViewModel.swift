@@ -26,6 +26,7 @@ let _mediaTypeToName: [AVMediaType: String] = [
 class TrackInfo: Identifiable, Hashable {
     let id: UUID
     var name: String
+    var enabled: Bool
     let track: AVMutableMovieTrack
     let duration: CMTime
     init(track: AVMutableMovieTrack, duration: CMTime) {
@@ -35,6 +36,7 @@ class TrackInfo: Identifiable, Hashable {
         self.name = name
         self.track = track
         self.duration = duration
+        self.enabled = track.isEnabled
     }
     static func == (lhs: TrackInfo, rhs: TrackInfo) -> Bool {
         return lhs.id == rhs.id
@@ -215,6 +217,9 @@ class MovieViewModel: Identifiable {
             self.currentTime = player.currentTime()
             self.enablePeriodicTimeObserver = true
         }
+        else {
+            self.currentTime = time
+        }
     }
     
     func getNextInterestingTime(after currentTime: CMTime) async throws -> CMTime {
@@ -287,7 +292,7 @@ class MovieViewModel: Identifiable {
         }
     }
     
-    func movieDidChange(newCurrentTime: CMTime, newSelection: CMTimeRange?) {
+    func movieDidChange(newCurrentTime: CMTime = .invalid, newSelection: CMTimeRange? = .invalid) {
         guard let player = self.player else { return }
         
         if let movieModel = self.movieModel, let movie = movieModel.movie {
@@ -295,13 +300,18 @@ class MovieViewModel: Identifiable {
             self.duration = movie.duration
             self.trackInfos = self.makeTrackInfos(from: movieModel)
 
-            let newPlayerItem = AVPlayerItem(asset: movie)
-            player.replaceCurrentItem(with: newPlayerItem)
-            // refresh some viewModel ideas from the modified movie
-            self.duration = movie.duration
-            self.selection = newSelection
-            Task {
-                await self.seek(to: newCurrentTime)
+            if let player = self.player {
+                let newPlayerItem = AVPlayerItem(asset: movie)
+                player.replaceCurrentItem(with: newPlayerItem)
+            }
+            
+            if newSelection != .invalid {
+                self.selection = newSelection
+            }
+            if newCurrentTime != .invalid {
+                Task {
+                    await self.seek(to: newCurrentTime)
+                }
             }
         }
         else {
@@ -471,16 +481,25 @@ class MovieViewModel: Identifiable {
         }
     }
     
-    func addTrack(_ track:AVMutableMovieTrack, duration: CMTime) {
+    func addTrack(_ trackInfo: TrackInfo) {
         guard let movieModel = self.movieModel else { return }
         Task {
-            await movieModel.addTrack(track, duration: duration)
+            await movieModel.addTrack(trackInfo.track, duration: trackInfo.duration)
         }
     }
     
-    func deleteTrack(_ track: AVMutableMovieTrack) {
+    func deleteTrack(_ trackInfo: TrackInfo) {
         guard let movieModel = self.movieModel else { return }
-        movieModel.deleteTrack(track)
+        Task {
+            await movieModel.deleteTrack(trackInfo.track)
+        }
+    }
+    
+    func toggleTrackEnabled(_ trackInfo: TrackInfo) {
+        guard let movieModel = self.movieModel else { return }
+        Task {
+            await movieModel.toggleTrackEnabled(trackInfo.track)
+        }
     }
     
     func runCursorTest() {

@@ -52,7 +52,8 @@ class MovieModel: Identifiable {
         catch { self.tracks = [] }
     }
     
-    func movieDidChange(newCurrentTime: CMTime, newSelection: CMTimeRange?) async {
+    func movieDidChange(newCurrentTime: CMTime = .invalid, newSelection: CMTimeRange? = .invalid) async {
+        // .invalid means do not change current time (or the current selection)
         await self.reloadMovie()
         self.parent?.movieDidChange(newCurrentTime: newCurrentTime, newSelection: newSelection)
     }
@@ -362,14 +363,19 @@ class MovieModel: Identifiable {
             // after adding a track (e.g. during extract track operations) the result should
             // not have any selection, and should be positioned at .zero, like you just opened
             // this movie.
-            self.parent?.movieDidChange(newCurrentTime: .zero, newSelection: nil)
+            await self.movieDidChange(newCurrentTime: .zero, newSelection: nil)
         }
     }
     
-    func deleteTrack(_ track: AVMutableMovieTrack) {
+    func deleteTrack(_ track: AVMutableMovieTrack) async {
         guard let movie: AVMutableMovie = self.movie else { return }
         movie.removeTrack(track)
-        self.parent?.movieDidChange(newCurrentTime: .zero, newSelection: nil)
+        await self.movieDidChange()
+    }
+    
+    func toggleTrackEnabled(_ track: AVMutableMovieTrack) async {
+        track.isEnabled.toggle()
+        await self.movieDidChange()
     }
     
     func runCursorTest() async {

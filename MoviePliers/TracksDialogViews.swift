@@ -10,9 +10,7 @@ struct ExtractTracksDialogView: View {
             Text("Select tracks to extract")
             List(selection: $selectedItems) {
                 ForEach($viewModel.trackInfos, id: \.id) { trackInfo in
-                    HStack {
-                        Text(trackInfo.name.wrappedValue)
-                    }
+                    Text(trackInfo.name.wrappedValue)
                 }
             }
             
@@ -21,7 +19,7 @@ struct ExtractTracksDialogView: View {
                     let trackViewModel = extractTracks(viewModel: viewModel, trackInfoIds: selectedItems)
                     openWindow(id: "movie-window", value: trackViewModel.id)
                 }
-                Button("Dismiss", role: .cancel) {
+                Button("Dismiss") {
                     viewModel.extractTracksIsPresented = false // Dismiss the sheet by setting the binding to false
                 }
             }
@@ -40,9 +38,7 @@ struct DeleteTracksDialogView: View {
             Text("Select tracks to delete")
             List(selection: $selectedItems) {
                 ForEach($viewModel.trackInfos, id: \.id) { trackInfo in
-                    HStack {
-                        Text(trackInfo.name.wrappedValue)
-                    }
+                    Text(trackInfo.name.wrappedValue)
                 }
             }
             
@@ -50,7 +46,7 @@ struct DeleteTracksDialogView: View {
                 Button("Delete", role: .destructive) {
                     deleteTracks(viewModel: viewModel, trackInfoIds: selectedItems)
                 }
-                Button("Dismiss", role: .cancel) {
+                Button("Dismiss") {
                     viewModel.deleteTracksIsPresented = false // Dismiss the sheet by setting the binding to false
                 }
             }
@@ -64,16 +60,24 @@ struct EnableTracksDialogView: View {
     @Binding var viewModel: MovieViewModel
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Enable Tracks")
-                .font(.title)
-
+        VStack {
+            Text("Enable tracks")
+            List() {
+                ForEach($viewModel.trackInfos, id: \.id) { trackInfo in
+                    HStack {
+                        Button(trackInfo.enabled.wrappedValue ? "On" : "Off") {
+                            toggleTrackEnabled(viewModel: viewModel, trackInfo: trackInfo.wrappedValue)
+                        }
+                        Text(trackInfo.name.wrappedValue)
+                    }
+                }
+            }
+            
             Button("Dismiss") {
                 viewModel.enableTracksIsPresented = false // Dismiss the sheet by setting the binding to false
             }
         }
         .padding(50) // Add padding for better appearance on macOS sheets
-        .frame(minWidth: 400, minHeight: 200)
+        .frame(minWidth: 400, minHeight: 300)
     }
 }
-
