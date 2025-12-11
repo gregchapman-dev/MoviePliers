@@ -17,13 +17,11 @@ struct ExtractTracksDialogView: View {
             }
             
             HStack {
-                Button() {
+                Button("Extract") {
                     let trackViewModel = extractTracks(viewModel: viewModel, trackInfoIds: selectedItems)
                     openWindow(id: "movie-window", value: trackViewModel.id)
-                } label: {
-                    Text("Extract")
                 }
-                Button("Dismiss") {
+                Button("Dismiss", role: .cancel) {
                     viewModel.extractTracksIsPresented = false // Dismiss the sheet by setting the binding to false
                 }
             }
@@ -35,18 +33,30 @@ struct ExtractTracksDialogView: View {
 
 struct DeleteTracksDialogView: View {
     @Binding var viewModel: MovieViewModel
+    @State private var selectedItems: Set<UUID> = []
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Delete Tracks")
-                .font(.title)
-
-            Button("Dismiss") {
-                viewModel.deleteTracksIsPresented = false // Dismiss the sheet by setting the binding to false
+        VStack {
+            Text("Select tracks to delete")
+            List(selection: $selectedItems) {
+                ForEach($viewModel.trackInfos, id: \.id) { trackInfo in
+                    HStack {
+                        Text(trackInfo.name.wrappedValue)
+                    }
+                }
+            }
+            
+            HStack {
+                Button("Delete", role: .destructive) {
+                    deleteTracks(viewModel: viewModel, trackInfoIds: selectedItems)
+                }
+                Button("Dismiss", role: .cancel) {
+                    viewModel.deleteTracksIsPresented = false // Dismiss the sheet by setting the binding to false
+                }
             }
         }
         .padding(50) // Add padding for better appearance on macOS sheets
-        .frame(minWidth: 400, minHeight: 200)
+        .frame(minWidth: 400, minHeight: 300)
     }
 }
 

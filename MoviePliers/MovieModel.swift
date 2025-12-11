@@ -366,6 +366,12 @@ class MovieModel: Identifiable {
         }
     }
     
+    func deleteTrack(_ track: AVMutableMovieTrack) {
+        guard let movie: AVMutableMovie = self.movie else { return }
+        movie.removeTrack(track)
+        self.parent?.movieDidChange(newCurrentTime: .zero, newSelection: nil)
+    }
+    
     func runCursorTest() async {
         guard let movie: AVMutableMovie = self.movie else { return }
         

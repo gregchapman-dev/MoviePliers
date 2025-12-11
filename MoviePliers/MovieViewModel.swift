@@ -173,6 +173,16 @@ class MovieViewModel: Identifiable {
         return TrackInfo(track: track, duration: movie.duration)
     }
     
+    func trackInfosForIds(trackInfoIds: Set<UUID>) -> [TrackInfo] {
+        var trackInfos: [TrackInfo] = []
+        for trackInfo in self.trackInfos {
+            if trackInfoIds.contains(trackInfo.id) {
+                trackInfos.append(trackInfo)
+            }
+        }
+        return trackInfos
+    }
+    
     var windowTitle: String {
         if let url = movieModel?.url {
             return url.lastPathComponent
@@ -466,6 +476,11 @@ class MovieViewModel: Identifiable {
         Task {
             await movieModel.addTrack(track, duration: duration)
         }
+    }
+    
+    func deleteTrack(_ track: AVMutableMovieTrack) {
+        guard let movieModel = self.movieModel else { return }
+        movieModel.deleteTrack(track)
     }
     
     func runCursorTest() {
