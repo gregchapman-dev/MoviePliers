@@ -276,3 +276,19 @@ struct MenuCommands: Commands {
         }
     }
 }
+
+func extractTracks(viewModel: MovieViewModel, trackInfoIds: Set<UUID>) -> MovieViewModel {
+    var trackInfos: [TrackInfo] = []
+    for trackInfo in viewModel.trackInfos {
+        if trackInfoIds.contains(trackInfo.id) {
+            trackInfos.append(trackInfo)
+        }
+    }
+    
+    let trackMovieViewModel = movieStore.newMovieViewModel()
+    for trackInfo in trackInfos {
+        print("extracting: \(trackInfo.name)")
+        trackMovieViewModel.addTrack(trackInfo.track, duration: trackInfo.duration)
+    }
+    return trackMovieViewModel
+}

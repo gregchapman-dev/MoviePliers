@@ -10,6 +10,8 @@ class MovieModel: Identifiable {
     var parent: MovieViewModel?
     
     var movie: AVMutableMovie?
+    var duration: CMTime = .zero
+    var tracks: [AVMutableMovieTrack] = []
     
     // url where the movie header is (either from file/open or from file/save/etc).
     // Doesn't exist for a new movie that has been edited, but not yet saved.
@@ -32,11 +34,27 @@ class MovieModel: Identifiable {
         if let movie {
             self.movie = movie
             Task {
-                let duration = try? await movie.load(.duration)
-                let tracks = try? await movie.load(.tracks)
-                parent!.movieDidLoad()
+                await self.reloadMovie()
+                parent?.movieDidLoad()
             }
         }
+    }
+    
+    func reloadMovie() async {
+        guard let movie = self.movie else {
+            return
+        }
+        
+        do { self.duration = try await movie.load(.duration) }
+        catch { self.duration = .zero }
+        
+        do { self.tracks = try await movie.load(.tracks) }
+        catch { self.tracks = [] }
+    }
+    
+    func movieDidChange(newCurrentTime: CMTime, newSelection: CMTimeRange?) async {
+        await self.reloadMovie()
+        self.parent?.movieDidChange(newCurrentTime: newCurrentTime, newSelection: newSelection)
     }
         
     // saving operations
@@ -197,7 +215,7 @@ class MovieModel: Identifiable {
 
             // New selection is the added timerange, and new thumb position is at the end of the add
             let newSelection = CMTimeRange(start: at, duration: pastedDuration)
-            self.parent?.movieDidChange(newCurrentTime: newSelection.end, newSelection: newSelection)
+            await self.movieDidChange(newCurrentTime: newSelection.end, newSelection: newSelection)
             
             return
         }
@@ -282,7 +300,7 @@ class MovieModel: Identifiable {
             // it in the player.
             // New selection is the pasted timerange, and new thumb position is at the end of the paste
             let newSelection = CMTimeRange(start: time, duration: duration)
-            self.parent?.movieDidChange(newCurrentTime: newSelection.end, newSelection: newSelection)
+            await self.movieDidChange(newCurrentTime: newSelection.end, newSelection: newSelection)
         }
         catch {
             print("error: \(error)")
@@ -298,13 +316,13 @@ class MovieModel: Identifiable {
         await paste(at: selection.start)
     }
     
-    func clear(_ selection: CMTimeRange) {
+    func clear(_ selection: CMTimeRange) async {
         // returns true if anything was deleted
         guard let movie: AVMutableMovie = self.movie else { return }
         _delete(timeRange: selection, from: movie)
         // New selection is nil (we cleared it), and new thumb position is where the old selection started
         // (which is now the frame just after the cleared area).
-        self.parent?.movieDidChange(newCurrentTime: selection.start, newSelection: nil)
+        await self.movieDidChange(newCurrentTime: selection.start, newSelection: nil)
     }
     
     func trim(_ selection: CMTimeRange) async {
@@ -319,7 +337,7 @@ class MovieModel: Identifiable {
             let headTimeRange = CMTimeRange(start: .zero, end: selection.start)
             _delete(timeRange: headTimeRange, from: movie)
             
-            self.parent?.movieDidChange(
+            await self.movieDidChange(
                 newCurrentTime: selection.duration,
                 newSelection: CMTimeRange(start: .zero, duration:  selection.duration)
             )
@@ -328,6 +346,24 @@ class MovieModel: Identifiable {
     
     func _delete(timeRange: CMTimeRange, from theMovie: AVMutableMovie) {
         theMovie.removeTimeRange(timeRange)
+    }
+    
+    // track operations
+    func addTrack(_ trackToAdd: AVMutableMovieTrack, duration: CMTime) async {
+        guard let movie: AVMutableMovie = self.movie else { return }
+
+        if let track = movie.addMutableTrack(withMediaType: trackToAdd.mediaType, copySettingsFrom: trackToAdd) {
+            try? track.insertTimeRange(
+                CMTimeRange(start: .zero, end: duration),
+                of: trackToAdd,
+                at: .zero,
+                copySampleData: false
+            )
+            // after adding a track (e.g. during extract track operations) the result should
+            // not have any selection, and should be positioned at .zero, like you just opened
+            // this movie.
+            self.parent?.movieDidChange(newCurrentTime: .zero, newSelection: nil)
+        }
     }
     
     func runCursorTest() async {

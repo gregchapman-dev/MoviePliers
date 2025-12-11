@@ -1,19 +1,35 @@
 import SwiftUI
 
 struct ExtractTracksDialogView: View {
+    @Environment(\.openWindow) private var openWindow
     @Binding var viewModel: MovieViewModel
+    @State private var selectedItems: Set<UUID> = []
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Extract Tracks")
-                .font(.title)
-
-            Button("Dismiss") {
-                viewModel.extractTracksIsPresented = false // Dismiss the sheet by setting the binding to false
+        VStack {
+            Text("Select tracks to extract")
+            List(selection: $selectedItems) {
+                ForEach($viewModel.trackInfos, id: \.id) { trackInfo in
+                    HStack {
+                        Text(trackInfo.name.wrappedValue)
+                    }
+                }
+            }
+            
+            HStack {
+                Button() {
+                    let trackViewModel = extractTracks(viewModel: viewModel, trackInfoIds: selectedItems)
+                    openWindow(id: "movie-window", value: trackViewModel.id)
+                } label: {
+                    Text("Extract")
+                }
+                Button("Dismiss") {
+                    viewModel.extractTracksIsPresented = false // Dismiss the sheet by setting the binding to false
+                }
             }
         }
         .padding(50) // Add padding for better appearance on macOS sheets
-        .frame(minWidth: 400, minHeight: 200)
+        .frame(minWidth: 400, minHeight: 300)
     }
 }
 

@@ -1,6 +1,49 @@
 import AVFoundation
 import AppKit
 
+let _orderedMediaTypes: [AVMediaType] = [
+    // These are in the order we would like to see them in the extract/delete/enable tracks dialogs
+    .video, .audio, .haptic, .muxed,
+    .text, .closedCaption, .subtitle,
+    .timecode, .depthData, .metadata, .auxiliaryPicture
+]
+
+let _mediaTypeToName: [AVMediaType: String] = [
+    .video: "Video",
+    .audio: "Audio",
+    .haptic: "Haptic",
+    .muxed: "Muxed",
+    .text: "Text",
+    .closedCaption: "Closed Caption",
+    .subtitle: "Subtitle",
+    .timecode: "Timecode",
+    .depthData: "Depth Data",
+    .metadata: "Metadata",
+    //.metadataObject: "Metadata Object",
+    .auxiliaryPicture: "Auxiliary Picture",
+]
+
+class TrackInfo: Identifiable, Hashable {
+    let id: UUID
+    var name: String
+    let track: AVMutableMovieTrack
+    let duration: CMTime
+    init(track: AVMutableMovieTrack, duration: CMTime) {
+        self.id = UUID()
+        var name: String = _mediaTypeToName[track.mediaType] ?? "Unknown"
+        name += " Track"
+        self.name = name
+        self.track = track
+        self.duration = duration
+    }
+    static func == (lhs: TrackInfo, rhs: TrackInfo) -> Bool {
+        return lhs.id == rhs.id
+    }
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
 @Observable
 class MovieViewModel: Identifiable {
     var id: UUID
@@ -11,6 +54,8 @@ class MovieViewModel: Identifiable {
     var selection: CMTimeRange?
     var interestingTimes: [CMTime]
     var isModified: Bool
+    
+    var trackInfos: [TrackInfo] = []
     
     // various sheets that can be presented
     var extractTracksIsPresented: Bool = false
@@ -89,6 +134,43 @@ class MovieViewModel: Identifiable {
             }
 
         return self._player
+    }
+    
+    func makeTrackInfos(from movieModel: MovieModel) -> [TrackInfo] {
+        guard let movie = movieModel.movie else {
+            return []
+        }
+        
+        // we group by mediaType
+        var trackInfos: [TrackInfo] = []
+        for mediaType in _orderedMediaTypes {
+            let tracks = movie.tracks(withMediaType: mediaType)
+            if !tracks.isEmpty {
+                var infos: [TrackInfo] = []
+                for track in tracks {
+                    infos.append(self.makeTrackInfo(from: track, of: movie))
+                }
+                
+                if infos.count > 1 {
+                    // add numeric suffix for uniqueness
+                    var index: Int = 1
+                    for info in infos {
+                        info.name += " \(index)"
+                        index += 1
+                    }
+                }
+                
+                // append to result
+                for info in infos {
+                    trackInfos.append(info)
+                }
+            }
+        }
+        return trackInfos
+    }
+    
+    func makeTrackInfo(from track: AVMutableMovieTrack, of movie: AVMutableMovie) -> TrackInfo {
+        return TrackInfo(track: track, duration: movie.duration)
     }
     
     var windowTitle: String {
@@ -188,8 +270,9 @@ class MovieViewModel: Identifiable {
     }
     
     func movieDidLoad() {
-        if let movie = self.movieModel?.movie {
-            self.duration = movie.duration
+        if let movieModel = self.movieModel {
+            self.duration = movieModel.duration
+            self.trackInfos = self.makeTrackInfos(from: movieModel)
             self.isLoaded = true
         }
     }
@@ -197,8 +280,11 @@ class MovieViewModel: Identifiable {
     func movieDidChange(newCurrentTime: CMTime, newSelection: CMTimeRange?) {
         guard let player = self.player else { return }
         
-        if let movie = self.movieModel?.movie {
+        if let movieModel = self.movieModel, let movie = movieModel.movie {
             self.isModified = true
+            self.duration = movie.duration
+            self.trackInfos = self.makeTrackInfos(from: movieModel)
+
             let newPlayerItem = AVPlayerItem(asset: movie)
             player.replaceCurrentItem(with: newPlayerItem)
             // refresh some viewModel ideas from the modified movie
@@ -337,11 +423,11 @@ class MovieViewModel: Identifiable {
     }
     
     func addScaled() {
+        // nil selection is ok, it means to scale to the entire movie duration
         guard let movieModel = self.movieModel else { return }
         Task {
-            // nil selection is ok, it means to scale to the entire movie duration
             if self.selection == nil {
-                await movieModel.addScaled()
+                await movieModel.addScaled()  // default params: at: .zero, scaledToDuration: movieModel.duration
             }
             else {
                 await movieModel.addScaled(at: self.selection!.start, scaledToDuration: self.selection!.duration)
@@ -351,16 +437,19 @@ class MovieViewModel: Identifiable {
     
     func replace() {
         // paste, replacing current selection time range
+        // nil selection NOT OK, because we're supposed to paste at selection.start
         guard let movieModel = self.movieModel, let selection = self.selection else { return }
         Task {
-            // nil selection NOT OK, because we're supposed to paste at selection.start
             await movieModel.replace(selection)
         }
     }
     
     func clear() {
+        // nil selection not ok (would be a no-op)
         guard let movieModel = self.movieModel, let selection = self.selection else { return }
-        movieModel.clear(selection)
+        Task {
+            await movieModel.clear(selection)
+        }
     }
     
     func trim() {
@@ -369,6 +458,13 @@ class MovieViewModel: Identifiable {
         }
         Task {
             await movieModel.trim(selection)
+        }
+    }
+    
+    func addTrack(_ track:AVMutableMovieTrack, duration: CMTime) {
+        guard let movieModel = self.movieModel else { return }
+        Task {
+            await movieModel.addTrack(track, duration: duration)
         }
     }
     
