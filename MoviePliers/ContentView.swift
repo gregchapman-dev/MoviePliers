@@ -49,10 +49,14 @@ class WindowCloser: NSObject, NSWindowDelegate {
 
             if response == .alertFirstButtonReturn {
                 // User chose "Discard Changes", allow closing
-                // But first restore originalDelegate (if there is one)
+                // But first restore originalDelegate (if there is one),
+                // and remove viewModel from movieStore (so it doesn't leak,
+                // and maybe even keep playing).
                 if let originalDelegate = self.viewModel!.originalDelegate {
                     sender.delegate = originalDelegate
                 }
+                self.viewModel!.player?.pause()
+                movieStore.removeMovieViewModel(for: self.viewModel!.id)
                 return true
             } else {
                 // User chose "Cancel", prevent closing
@@ -61,11 +65,13 @@ class WindowCloser: NSObject, NSWindowDelegate {
         }
         
         // No unsaved changes, allow closing
-        // But first, restore originalDelegate if there is one
+        // But first, restore originalDelegate if there is one (and remove viewModel from store)
         if self.viewModel != nil {
             if let originalDelegate = self.viewModel!.originalDelegate {
                 sender.delegate = originalDelegate
             }
+            self.viewModel!.player?.pause()
+            movieStore.removeMovieViewModel(for: self.viewModel!.id)
         }
         return true
     }
