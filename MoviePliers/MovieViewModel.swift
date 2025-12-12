@@ -1,3 +1,4 @@
+import SwiftUI
 import AVFoundation
 import AppKit
 
@@ -329,13 +330,48 @@ class MovieViewModel: Identifiable {
         savePanel.canCreateDirectories = true
         savePanel.allowedContentTypes = [.quickTimeMovie, .mpeg4Movie]
 
+        // State for the accessory view
+        var saveAsSelfContained: Int = 0
+
+        // Create the SwiftUI view and wrap it in a hosting controller
+        let accessoryView = SavePanelAccessoryView(
+            saveAsSelfContained: Binding(
+                get: { saveAsSelfContained },
+                set: { saveAsSelfContained = $0 }
+            )
+        )
+        let hostingController = NSHostingController(rootView: accessoryView)
+
+        // embed the SwiftUI in a custom view
+        let customView = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 60))
+        customView.addSubview(hostingController.view)
+
+        // use my own constraints
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        // top and bottom clipped to custom view
+        hostingController.view.topAnchor.constraint(equalTo: customView.topAnchor).isActive = true
+        hostingController.view.bottomAnchor.constraint(equalTo: customView.bottomAnchor).isActive = true
+
+        // leading and trailing spaces can stretch as far as they need to be, hence ≥0
+        hostingController.view.leadingAnchor.constraint(greaterThanOrEqualTo: customView.leadingAnchor).isActive = true
+        hostingController.view.trailingAnchor.constraint(greaterThanOrEqualTo: customView.trailingAnchor).isActive = true
+
+        // center the SwiftUI view horizontal within custom view
+        hostingController.view.centerXAnchor.constraint(equalTo: customView.centerXAnchor).isActive = true
+
+        // usually fixed width and height
+        // can be flexible when SwiftUI view is dynamic
+        hostingController.view.widthAnchor.constraint(equalToConstant: customView.frame.width).isActive = true
+        hostingController.view.heightAnchor.constraint(greaterThanOrEqualToConstant: customView.frame.height).isActive = true
+
+        savePanel.accessoryView = customView
+
         // Run the panel modally
         let response = savePanel.runModal()
-
-        if response == .OK {
-            if let url = savePanel.url {
-                self.saveAs(url, selfContained: false)
-            }
+        if response == .OK, let url = savePanel.url {
+            let selfContained: Bool = saveAsSelfContained != 0
+            self.saveAs(url, selfContained: selfContained)
         }
     }
 

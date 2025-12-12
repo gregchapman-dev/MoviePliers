@@ -20,6 +20,7 @@
 		178E91C32EDE267200407E45 /* SelectableRangeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91B72EDE267200407E45 /* SelectableRangeSlider.swift */; };
 		178E91C52EDE740E00407E45 /* AtomParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91C42EDE740E00407E45 /* AtomParser.swift */; };
 		178E91C72EE8F8BC00407E45 /* TracksDialogViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91C62EE8F8BC00407E45 /* TracksDialogViews.swift */; };
+		178E91C92EEB8F5100407E45 /* SavePanelAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91C82EEB8F5100407E45 /* SavePanelAccessoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 		178E91B72EDE267200407E45 /* SelectableRangeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableRangeSlider.swift; sourceTree = "<group>"; };
 		178E91C42EDE740E00407E45 /* AtomParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtomParser.swift; sourceTree = "<group>"; };
 		178E91C62EE8F8BC00407E45 /* TracksDialogViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracksDialogViews.swift; sourceTree = "<group>"; };
+		178E91C82EEB8F5100407E45 /* SavePanelAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavePanelAccessoryView.swift; sourceTree = "<group>"; };
 		17D18D6F2EAED627008B239E /* MoviePliers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoviePliers.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -60,6 +62,7 @@
 				178E91B12EDE267200407E45 /* MoviePlayerControlsView.swift */,
 				178E91B72EDE267200407E45 /* SelectableRangeSlider.swift */,
 				178E91C62EE8F8BC00407E45 /* TracksDialogViews.swift */,
+				178E91C82EEB8F5100407E45 /* SavePanelAccessoryView.swift */,
 				178E91B52EDE267200407E45 /* MovieViewModel.swift */,
 				178E91B02EDE267200407E45 /* MovieModel.swift */,
 				178E91B32EDE267200407E45 /* MovieStore.swift */,
@@ -162,6 +165,7 @@
 				178E91BA2EDE267200407E45 /* ContentView.swift in Sources */,
 				178E91BB2EDE267200407E45 /* MenuCommands.swift in Sources */,
 				178E91BC2EDE267200407E45 /* MovieModel.swift in Sources */,
+				178E91C92EEB8F5100407E45 /* SavePanelAccessoryView.swift in Sources */,
 				178E91BD2EDE267200407E45 /* MoviePlayerControlsView.swift in Sources */,
 				178E91BE2EDE267200407E45 /* MoviePliersApp.swift in Sources */,
 				178E91BF2EDE267200407E45 /* MovieStore.swift in Sources */,
