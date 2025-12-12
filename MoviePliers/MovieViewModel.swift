@@ -331,14 +331,16 @@ class MovieViewModel: Identifiable {
         savePanel.allowedContentTypes = [.quickTimeMovie, .mpeg4Movie]
 
         // State for the accessory view
-        var saveAsSelfContained: Int = 0
+        var saveAsSelfContained: Bool = false
+        let selectedOption = saveAsSelfContainedOptions[saveAsSelfContained ? 1 : 0]
 
         // Create the SwiftUI view and wrap it in a hosting controller
         let accessoryView = SavePanelAccessoryView(
             saveAsSelfContained: Binding(
                 get: { saveAsSelfContained },
                 set: { saveAsSelfContained = $0 }
-            )
+            ),
+            selectedOption: selectedOption
         )
         let hostingController = NSHostingController(rootView: accessoryView)
 
@@ -370,8 +372,7 @@ class MovieViewModel: Identifiable {
         // Run the panel modally
         let response = savePanel.runModal()
         if response == .OK, let url = savePanel.url {
-            let selfContained: Bool = saveAsSelfContained != 0
-            self.saveAs(url, selfContained: selfContained)
+            self.saveAs(url, selfContained: saveAsSelfContained)
         }
     }
 
