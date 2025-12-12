@@ -83,12 +83,27 @@ class MovieModel: Identifiable {
             fileType = .mov
         }
         
+        guard let fileType else {
+            return
+        }
+        
         do {
             if selfContained {
-                print("self-contained write not yet implemented, writing header only")
+                let savedMovie = try AVMutableMovie(settingsFrom: movie)
+                savedMovie.timescale = movie.timescale
+                let mediaDataStorage = AVMediaDataStorage(url: theURL)
+                savedMovie.defaultMediaDataStorage = mediaDataStorage
+                try savedMovie.insertTimeRange(CMTimeRange(start: .zero, end: movie.duration), of: movie, at: .zero, copySampleData: true)
+                try savedMovie.writeHeader(to: theURL, fileType: fileType, options: .addMovieHeaderToDestination)
+                // update movieModel to be the savedMovie
+                self.movie = savedMovie
+                self.url = theURL
+                await self.movieDidChange()
             }
-            try movie.writeHeader(to: theURL, fileType: fileType!, options: .truncateDestinationToMovieHeaderOnly)
-            self.url = theURL
+            else {
+                try movie.writeHeader(to: theURL, fileType: fileType, options: .truncateDestinationToMovieHeaderOnly)
+                self.url = theURL
+            }
         }
         catch {
             print("error saving movie: \(error.localizedDescription)")
