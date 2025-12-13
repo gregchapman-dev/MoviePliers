@@ -60,7 +60,7 @@ struct GetInfoView: View {
             HStack {
                 Picker("", selection: $selectedTrackOrMovie) {
                     ForEach($viewModel.trackInfos, id: \.id) { trackInfo in
-                        Text(trackInfo.name.wrappedValue)
+                        Text(trackInfo.name.wrappedValue).tag(trackInfo.wrappedValue)
                     }
                 }
                 .onChange(of: selectedTrackOrMovie) { oldTrackInfo, newTrackInfo in
@@ -78,31 +78,33 @@ struct GetInfoView: View {
                         selectedInfoView = otherMediaTrackInfoViews.first!
                     }
                 }
+                
                 Picker("", selection: $selectedInfoView) {
                     if selectedTrackOrMovie.track == nil {
                         ForEach(movieInfoViews, id: \.id) { infoView in
-                            Text(infoView.title)
+                            Text(infoView.title).tag(infoView)
                         }
                     }
                     else if selectedTrackOrMovie.track!.mediaType == .audio {
                         ForEach(audioTrackInfoViews, id: \.id) { infoView in
-                            Text(infoView.title)
+                            Text(infoView.title).tag(infoView)
                         }
                     }
                     else if selectedTrackOrMovie.track!.mediaType == .video {
                         ForEach(videoTrackInfoViews, id: \.id) { infoView in
-                            Text(infoView.title)
+                            Text(infoView.title).tag(infoView)
                         }
                     }
                     else {
                         ForEach(otherMediaTrackInfoViews, id: \.id) { infoView in
-                            Text(infoView.title)
+                            Text(infoView.title).tag(infoView)
                         }
                     }
                 }
             }
 
             Text("\(selectedTrackOrMovie.name): \(selectedInfoView.title)")
+            
             Button("Dismiss") {
                 viewModel.infoViewIsPresented = false // Dismiss the sheet
             }
