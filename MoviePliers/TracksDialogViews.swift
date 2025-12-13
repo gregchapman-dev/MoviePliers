@@ -9,7 +9,7 @@ struct ExtractTracksDialogView: View {
         VStack {
             Text("Select tracks to extract")
             List(selection: $selectedItems) {
-                ForEach($viewModel.trackInfos, id: \.id) { trackInfo in
+                ForEach($viewModel.trackInfos[1..<viewModel.trackInfos.count], id: \.id) { trackInfo in
                     Text(trackInfo.name.wrappedValue)
                 }
             }
@@ -37,7 +37,7 @@ struct DeleteTracksDialogView: View {
         VStack {
             Text("Select tracks to delete")
             List(selection: $selectedItems) {
-                ForEach($viewModel.trackInfos, id: \.id) { trackInfo in
+                ForEach($viewModel.trackInfos[1..<viewModel.trackInfos.count], id: \.id) { trackInfo in
                     Text(trackInfo.name.wrappedValue)
                 }
             }
@@ -63,7 +63,7 @@ struct EnableTracksDialogView: View {
         VStack {
             Text("Enable tracks")
             List() {
-                ForEach($viewModel.trackInfos, id: \.id) { trackInfo in
+                ForEach($viewModel.trackInfos[1..<viewModel.trackInfos.count], id: \.id) { trackInfo in
                     HStack {
                         Button(trackInfo.enabled.wrappedValue ? "On" : "Off") {
                             toggleTrackEnabled(viewModel: viewModel, trackInfo: trackInfo.wrappedValue)

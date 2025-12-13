@@ -28,16 +28,24 @@ class TrackInfo: Identifiable, Hashable {
     let id: UUID
     var name: String
     var enabled: Bool
-    let track: AVMutableMovieTrack
+    let track: AVMutableMovieTrack?
+    let movie: AVMutableMovie?
     let duration: CMTime
-    init(track: AVMutableMovieTrack, duration: CMTime) {
+    init(track: AVMutableMovieTrack? = nil, movie: AVMutableMovie) {
         self.id = UUID()
-        var name: String = _mediaTypeToName[track.mediaType] ?? "Unknown"
-        name += " Track"
-        self.name = name
-        self.track = track
-        self.duration = duration
-        self.enabled = track.isEnabled
+        if let track {
+            var name: String = _mediaTypeToName[track.mediaType] ?? "Unknown"
+            name += " Track"
+            self.name = name
+            self.track = track
+            self.enabled = track.isEnabled
+        } else {
+            self.track = nil
+            self.name = "Movie"
+            self.enabled = true
+        }
+        self.movie = movie
+        self.duration = movie.duration
     }
     static func == (lhs: TrackInfo, rhs: TrackInfo) -> Bool {
         return lhs.id == rhs.id
@@ -58,12 +66,18 @@ class MovieViewModel: Identifiable {
     var interestingTimes: [CMTime]
     var isModified: Bool
     
+    // includes first entry which actually is the movieInfo
     var trackInfos: [TrackInfo] = []
     
-    // various sheets that can be presented
+    // various sheets that can be presented:
+    
+    // extract/enable/delete tracks dialogs
     var extractTracksIsPresented: Bool = false
     var enableTracksIsPresented: Bool = false
     var deleteTracksIsPresented: Bool = false
+    
+    // Get Info (in all its glory)
+    var infoViewIsPresented: Bool = false
 
     var window: NSWindow?
     var originalDelegate: NSWindowDelegate?
@@ -144,8 +158,11 @@ class MovieViewModel: Identifiable {
             return []
         }
         
-        // we group by mediaType
-        var trackInfos: [TrackInfo] = []
+        // First trackInfo is actually movieInfo
+        let movieInfo = self.makeTrackInfo(from: nil, of: movie)
+        
+        // we group by mediaType (movieInfo goes first)
+        var trackInfos: [TrackInfo] = [movieInfo]
         for mediaType in _orderedMediaTypes {
             let tracks = movie.tracks(withMediaType: mediaType)
             if !tracks.isEmpty {
@@ -172,8 +189,8 @@ class MovieViewModel: Identifiable {
         return trackInfos
     }
     
-    func makeTrackInfo(from track: AVMutableMovieTrack, of movie: AVMutableMovie) -> TrackInfo {
-        return TrackInfo(track: track, duration: movie.duration)
+    func makeTrackInfo(from track: AVMutableMovieTrack?, of movie: AVMutableMovie) -> TrackInfo {
+        return TrackInfo(track: track, movie: movie)
     }
     
     func trackInfosForIds(trackInfoIds: Set<UUID>) -> [TrackInfo] {
@@ -526,22 +543,25 @@ class MovieViewModel: Identifiable {
     
     func addTrack(_ trackInfo: TrackInfo) {
         guard let movieModel = self.movieModel else { return }
+        guard let track = trackInfo.track else { return }
         Task {
-            await movieModel.addTrack(trackInfo.track, duration: trackInfo.duration)
+            await movieModel.addTrack(track, duration: trackInfo.duration)
         }
     }
     
     func deleteTrack(_ trackInfo: TrackInfo) {
         guard let movieModel = self.movieModel else { return }
+        guard let track = trackInfo.track else { return }
         Task {
-            await movieModel.deleteTrack(trackInfo.track)
+            await movieModel.deleteTrack(track)
         }
     }
     
     func toggleTrackEnabled(_ trackInfo: TrackInfo) {
         guard let movieModel = self.movieModel else { return }
+        guard let track = trackInfo.track else { return }
         Task {
-            await movieModel.toggleTrackEnabled(trackInfo.track)
+            await movieModel.toggleTrackEnabled(track)
         }
     }
     

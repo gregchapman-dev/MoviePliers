@@ -221,16 +221,20 @@ struct MenuCommands: Commands {
         }
 
         CommandMenu("Movie") {
-            Button("Run Test") {
-                print("run test")
+//            Button("Run Test") {
+//                print("run test")
+//                if let id = activeMovieID {
+//                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+//                        viewModel.runCursorTest()
+//                    }
+//                }
+//            }
+            Button("Get Info") {
                 if let id = activeMovieID {
                     if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        viewModel.runCursorTest()
+                        viewModel.infoViewIsPresented = true
                     }
                 }
-            }
-            Button("Get Info") {
-                print("get info")
             }.keyboardShortcut("I", modifiers: .command)
             Button("Show Copyright") {
                 print("show copyright etc")
