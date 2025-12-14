@@ -41,6 +41,9 @@ struct MoviePliersApp: App {
                     .navigationTitle(movieStore.getMovieViewModel(for: identifier)?.windowTitle ?? "unknown")
             }
         }
+        .commands {
+            MenuCommands()
+        }
         .restorationBehavior(.disabled)
         
         Settings {
