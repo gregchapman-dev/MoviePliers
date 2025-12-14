@@ -103,7 +103,7 @@ struct GetInfoView: View {
                 }
             }
 
-            Text("\(selectedTrackOrMovie.name): \(selectedInfoView.title)")
+            infoDetailsView.frame(width: 300, height: 300)
             
             Button("Dismiss") {
                 viewModel.infoViewIsPresented = false // Dismiss the sheet
@@ -112,4 +112,47 @@ struct GetInfoView: View {
         .padding(50) // Add padding for better appearance on macOS sheets
         .frame(minWidth: 400, minHeight: 300)
     }
+    
+    private var infoDetailsView: some View {
+        ScrollView {
+            if selectedInfoView.title == "Annotations" {
+                movieAnnotationsView
+            }
+//            else if selectedInfoView.title == "Time" {
+//                movieTimeView
+//            }
+            else {
+                Text("needs implementation: \(selectedTrackOrMovie.name)\(selectedInfoView.title)")
+            }
+        }
+    }
+    // Here are all the various things that can be displayed under the two pickers (based on which right-hand picker
+    // is selected).
+    
+    private var movieAnnotationsView: some View {
+        VStack {
+            Text("Properties")
+            ScrollView {
+                Text("Single-select list of properties goes here")
+                Text("Information")
+                Text("Copyright")
+            }.backgroundStyle(Color(.white))
+            Text("Data")
+            ScrollView {
+                Text("Text value of property is displayed here")
+            }.backgroundStyle(Color(.gray))
+            HStack {
+                Button("Add...") {
+                    print("Add Property Button Pressed")
+                }
+                Button("Edit...") {
+                    print("Edit Property Button Pressed")
+                }
+                Button("Delete") {
+                    print("Delete Property Button Pressed")
+                }
+            }
+        }
+    }
+
 }
