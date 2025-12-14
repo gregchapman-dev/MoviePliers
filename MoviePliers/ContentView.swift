@@ -58,6 +58,17 @@ class WindowCloser: NSObject, NSWindowDelegate {
                         viewModel.originalDelegate = nil
                         viewModel.myDelegate = nil
                     }
+                    // close info window for this viewModel (if present)
+                    if let infoWindow = viewModel.infoWindow {
+                        if let windowShouldClose = viewModel.myInfoDelegate?.windowShouldClose {
+                            if windowShouldClose(infoWindow) {
+                                infoWindow.close()
+                            }
+                        }
+                        viewModel.infoWindow = nil
+                        viewModel.myInfoDelegate = nil
+                    }
+
                     viewModel.player?.pause()
                     movieStore.removeMovieViewModel(for: viewModel.id)
                     return true
@@ -73,6 +84,16 @@ class WindowCloser: NSObject, NSWindowDelegate {
                     sender.delegate = originalDelegate
                     viewModel.originalDelegate = nil
                     viewModel.myDelegate = nil
+                }
+                // close info window for this viewModel (if present)
+                if let infoWindow = viewModel.infoWindow {
+                    if let windowShouldClose = viewModel.myInfoDelegate?.windowShouldClose {
+                        if windowShouldClose(infoWindow) {
+                            infoWindow.close()
+                        }
+                    }
+                    viewModel.infoWindow = nil
+                    viewModel.myInfoDelegate = nil
                 }
                 viewModel.player?.pause()
                 movieStore.removeMovieViewModel(for: viewModel.id)
