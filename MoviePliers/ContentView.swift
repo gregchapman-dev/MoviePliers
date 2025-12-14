@@ -36,44 +36,54 @@ class WindowCloser: NSObject, NSWindowDelegate {
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if self.viewModel != nil && self.viewModel!.isModified {
-            // Show alert and get user decision
-            let alert = NSAlert()
-            alert.messageText = "Discard changes?"
-            alert.informativeText = "You have unsaved changes. Do you want to discard them and close the window?"
-            alert.addButton(withTitle: "Discard Changes")
-            alert.addButton(withTitle: "Cancel")
-            
-            // Display the alert modally
-            let response = alert.runModal()
+        if let viewModel = self.viewModel {
+            if viewModel.isModified {
+                // Show alert and get user decision
+                let alert = NSAlert()
+                alert.messageText = "Discard changes?"
+                alert.informativeText = "You have unsaved changes. Do you want to discard them and close the window?"
+                alert.addButton(withTitle: "Discard Changes")
+                alert.addButton(withTitle: "Cancel")
+                
+                // Display the alert modally
+                let response = alert.runModal()
 
-            if response == .alertFirstButtonReturn {
-                // User chose "Discard Changes", allow closing
-                // But first restore originalDelegate (if there is one),
-                // and remove viewModel from movieStore (so it doesn't leak,
-                // and maybe even keep playing).
-                if let originalDelegate = self.viewModel!.originalDelegate {
-                    sender.delegate = originalDelegate
+                if response == .alertFirstButtonReturn {
+                    // User chose "Discard Changes", allow closing
+                    // But first restore originalDelegate (if there is one),
+                    // and remove viewModel from movieStore (so it doesn't leak,
+                    // and maybe even keep playing).
+                    if let originalDelegate = viewModel.originalDelegate {
+                        sender.delegate = originalDelegate
+                        viewModel.originalDelegate = nil
+                        viewModel.myDelegate = nil
+                    }
+                    viewModel.player?.pause()
+                    movieStore.removeMovieViewModel(for: viewModel.id)
+                    return true
+                } else {
+                    // User chose "Cancel", prevent closing
+                    return false
                 }
-                self.viewModel!.player?.pause()
-                movieStore.removeMovieViewModel(for: self.viewModel!.id)
+            }
+            else {
+                // No unsaved changes, allow closing
+                // But first, restore originalDelegate if there is one (and remove viewModel from store)
+                if let originalDelegate = viewModel.originalDelegate {
+                    sender.delegate = originalDelegate
+                    viewModel.originalDelegate = nil
+                    viewModel.myDelegate = nil
+                }
+                viewModel.player?.pause()
+                movieStore.removeMovieViewModel(for: viewModel.id)
                 return true
-            } else {
-                // User chose "Cancel", prevent closing
-                return false
             }
         }
-        
-        // No unsaved changes, allow closing
-        // But first, restore originalDelegate if there is one (and remove viewModel from store)
-        if self.viewModel != nil {
-            if let originalDelegate = self.viewModel!.originalDelegate {
-                sender.delegate = originalDelegate
-            }
-            self.viewModel!.player?.pause()
-            movieStore.removeMovieViewModel(for: self.viewModel!.id)
+        else {
+            // no viewModel for this window (can we get here?)
+            // Whatever, let the window close.
+            return true
         }
-        return true
     }
 }
 

@@ -50,17 +50,49 @@ let otherMediaTrackInfoViews: [InfoView] = [
     .init(title: "High Quality"),
 ]
 
+// This is for intercepting clicks on the red "close" bubble in the info window
+class InfoWindowCloser: NSObject, NSWindowDelegate {
+    let viewModel: MovieViewModel?
+
+    init(for viewModel: MovieViewModel?) {
+        self.viewModel = viewModel
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        // always returns true; is only here so we can clear
+        // state when closing.
+        if let viewModel = self.viewModel {
+            viewModel.infoWindow = nil
+            if let originalInfoDelegate = viewModel.originalInfoDelegate {
+                sender.delegate = originalInfoDelegate
+                viewModel.myInfoDelegate = nil
+                viewModel.originalInfoDelegate = nil
+            }
+        }
+        return true
+    }
+}
+
 struct GetInfoView: View {
     @State var viewModel: MovieViewModel
     @State var selectedInfoView: InfoView
     @State var selectedTrackOrMovie: TrackInfo
 
     init(movieID theID: UUID) {
-        let vm = movieStore.getMovieViewModel(for: theID)!
-        self.viewModel = vm
-        print("GetInfoView movie ID = \(theID)")
-        self.selectedInfoView = movieInfoViews.first!
-        self.selectedTrackOrMovie = vm.trackInfos.first!
+        let vm = movieStore.getMovieViewModel(for: theID)
+        if let vm {
+            self.viewModel = vm
+            print("GetInfoView movie ID = \(theID)")
+            self.selectedInfoView = movieInfoViews.first!
+            self.selectedTrackOrMovie = vm.trackInfos.first!
+            return
+        }
+        else {
+            // temporary; window is in the process of going away
+            self.viewModel = MovieViewModel()
+            self.selectedInfoView = movieInfoViews.first!
+            self.selectedTrackOrMovie = TrackInfo(movie: AVMutableMovie())
+        }
     }
 
     var body: some View {
@@ -115,6 +147,20 @@ struct GetInfoView: View {
         }
         .padding(50) // Add padding for better appearance on macOS sheets
         .frame(width: 300, height: 300)
+        .background(
+            HostingWindowFinder { window in
+                viewModel.infoWindow = window
+                viewModel.originalInfoDelegate = window.delegate
+                viewModel.myInfoDelegate = InfoWindowCloser(for: viewModel)
+                // Setting window.delegate to our window closer, means that InfoWindowCloser.windowShouldClose()
+                // will be called if the red bubble in the window is clicked.  Other close methods are handled
+                // more directly in viewModel.closeView(), which is called from Close in the menu.
+                window.delegate = viewModel.myInfoDelegate
+            }
+        )
+        .onDisappear {
+            viewModel.infoWindow = nil
+        }
     }
     
     private var infoDetailsView: some View {

@@ -82,6 +82,10 @@ class MovieViewModel: Identifiable {
     var window: NSWindow?
     var originalDelegate: NSWindowDelegate?
     var myDelegate: NSWindowDelegate?
+    
+    var infoWindow: NSWindow?
+    var originalInfoDelegate: NSWindowDelegate?
+    var myInfoDelegate: NSWindowDelegate?
 
     init(movie: AVMutableMovie? = nil, url: URL? = nil, id: UUID? = nil) {
         if let id {
@@ -424,6 +428,18 @@ class MovieViewModel: Identifiable {
             print("closing window for viewModel")
             self.player?.pause()
             movieStore.removeMovieViewModel(for: self.id)
+
+            // close associated info window (if open)
+            if let infoWindow = self.infoWindow {
+                if let infoCloser = self.myInfoDelegate, let windowShouldClose = infoCloser.windowShouldClose {
+                    if windowShouldClose(infoWindow) {
+                        infoWindow.close()
+                    }
+                }
+                self.infoWindow = nil
+                self.myInfoDelegate = nil
+            }
+            
             window.close()
         }
     }
