@@ -51,9 +51,17 @@ let otherMediaTrackInfoViews: [InfoView] = [
 ]
 
 struct GetInfoView: View {
-    @Binding var viewModel: MovieViewModel
-    @State var selectedTrackOrMovie: TrackInfo
+    @State var viewModel: MovieViewModel
     @State var selectedInfoView: InfoView
+    @State var selectedTrackOrMovie: TrackInfo
+
+    init(movieID theID: UUID) {
+        let vm = movieStore.getMovieViewModel(for: theID)!
+        self.viewModel = vm
+        print("GetInfoView movie ID = \(theID)")
+        self.selectedInfoView = movieInfoViews.first!
+        self.selectedTrackOrMovie = vm.trackInfos.first!
+    }
 
     var body: some View {
         VStack {
@@ -104,13 +112,9 @@ struct GetInfoView: View {
             }
 
             infoDetailsView.frame(width: 300, height: 300)
-            
-            Button("Dismiss") {
-                viewModel.infoViewIsPresented = false // Dismiss the sheet
-            }
         }
         .padding(50) // Add padding for better appearance on macOS sheets
-        .frame(minWidth: 400, minHeight: 300)
+        .frame(width: 300, height: 300)
     }
     
     private var infoDetailsView: some View {

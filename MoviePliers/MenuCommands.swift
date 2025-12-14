@@ -231,8 +231,8 @@ struct MenuCommands: Commands {
 //            }
             Button("Get Info") {
                 if let id = activeMovieID {
-                    if let viewModel = movieStore.getMovieViewModel(for: id) {
-                        viewModel.infoViewIsPresented = true
+                    if let _ = movieStore.getMovieViewModel(for: id) {
+                        openWindow(id: "get-info-window", value: id)
                     }
                 }
             }.keyboardShortcut("I", modifiers: .command)

@@ -35,6 +35,14 @@ struct MoviePliersApp: App {
         }
         .restorationBehavior(.disabled)
 
+        WindowGroup(id: "get-info-window", for: UUID.self) { movieID in
+            if let identifier = movieID.wrappedValue {
+                GetInfoView(movieID: identifier)
+                    .navigationTitle(movieStore.getMovieViewModel(for: identifier)?.windowTitle ?? "unknown")
+            }
+        }
+        .restorationBehavior(.disabled)
+        
         Settings {
             // SettingsView()
         }

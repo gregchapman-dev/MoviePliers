@@ -97,10 +97,6 @@ struct ContentView: View {
             // Present the delete tracks dialog when appropriate
             DeleteTracksDialogView(viewModel: $viewModel)
         }
-        .sheet(isPresented: $viewModel.infoViewIsPresented) {
-            // Present the delete tracks dialog when appropriate
-            GetInfoView(viewModel: $viewModel, selectedTrackOrMovie: viewModel.trackInfos.first!, selectedInfoView: movieInfoViews.first!)
-        }
         .background(
             HostingWindowFinder { window in
                 viewModel.window = window
