@@ -228,3 +228,42 @@ extension AVAssetTrack {
         await .init(track: self, presentationTimeStamp: presentationTimeStamp)
     }
 }
+
+enum CMTimeFormat {
+    case withFraction
+    case withMillisecondsDecimal
+    case withMillisecondsDecimalAndFraction
+}
+extension CMTime {
+    func formatted(_ format: CMTimeFormat = .withMillisecondsDecimal) -> String {
+        let timeInSeconds = self.seconds
+        guard !timeInSeconds.isNaN else {
+            return "nan"
+        }
+        guard !timeInSeconds.isInfinite else {
+            return "inf"
+        }
+ 
+        var seconds = Int(timeInSeconds)
+        let hours = seconds / 3600
+        seconds -= hours * 3600
+        let minutes = seconds / 60
+        seconds -= minutes * 60
+    
+        switch format {
+        case .withFraction:
+            return String(format: "%ld/%d", self.value, self.timescale)
+        case .withMillisecondsDecimal:
+            let millisecs = Int(round((timeInSeconds - Double(Int(timeInSeconds))) * 1000.0))
+            if millisecs != 0 {
+                return String(format: "%d:%02d:%02d.%03d", hours, minutes, seconds, millisecs)
+            }
+            else {
+                return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+            }
+        case .withMillisecondsDecimalAndFraction:
+            let millisecs = Int(round((timeInSeconds - Double(Int(timeInSeconds))) * 1000.0))
+            return String(format: "%d:%02d:%02d.%03d (%ld/%d)", hours, minutes, seconds, millisecs, self.value, self.timescale)
+        }
+    }
+}

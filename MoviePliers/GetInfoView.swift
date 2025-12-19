@@ -50,7 +50,8 @@ let otherMediaTrackInfoViews: [InfoView] = [
     .init(title: "High Quality"),
 ]
 
-// This is for intercepting clicks on the red "close" bubble in the info window
+// This is for intercepting clicks on the red "close" bubble in the info window.
+// We also call windowShouldClose by hand when File/Close (a.k.a. cmd-W) is performed.
 class InfoWindowCloser: NSObject, NSWindowDelegate {
     let viewModel: MovieViewModel?
 
@@ -143,10 +144,10 @@ struct GetInfoView: View {
                 }
             }
 
-            infoDetailsView.frame(width: 300, height: 300)
+            infoDetailsView.frame(height: 300)
         }
         .padding(50) // Add padding for better appearance on macOS sheets
-        .frame(width: 300, height: 300)
+        .frame(height: 300)
         .background(
             HostingWindowFinder { window in
                 viewModel.infoWindow = window
@@ -168,9 +169,9 @@ struct GetInfoView: View {
             if selectedInfoView.title == "Annotations" {
                 movieAnnotationsView
             }
-//            else if selectedInfoView.title == "Time" {
-//                movieTimeView
-//            }
+            else if selectedInfoView.title == "Time" {
+                movieTimeView
+            }
             else {
                 Text("needs implementation: \(selectedTrackOrMovie.name)\(selectedInfoView.title)")
             }
@@ -201,6 +202,30 @@ struct GetInfoView: View {
                 Button("Delete") {
                     print("Delete Property Button Pressed")
                 }
+            }
+        }
+    }
+    
+    private var movieTimeView: some View {
+        VStack {
+            Divider()
+            Text("Current Time: \(viewModel.currentTime.formatted(.withMillisecondsDecimalAndFraction))")
+                //.frame(alignment: .leading)
+            Divider()
+            Text("Duration: \(viewModel.duration.formatted(.withMillisecondsDecimalAndFraction))")
+                //.frame(alignment: .leading)
+            Divider()
+            if let selection = viewModel.selection {
+                Text("Selection Start: \(selection.start.formatted(.withMillisecondsDecimalAndFraction))")
+                    //.frame(alignment: .leading)
+                Text("Selection End: \(selection.end.formatted(.withMillisecondsDecimalAndFraction))")
+                    //.frame(alignment: .leading)
+                Text("Selection Duration: \(selection.duration.formatted(.withMillisecondsDecimalAndFraction))")
+                    //.frame(alignment: .leading)
+            }
+            else {
+                Text("No selection")
+                    //.frame(alignment: .center)
             }
         }
     }
