@@ -143,14 +143,16 @@ class MovieViewModel: Identifiable {
         self.currentTime = .zero
         
         self.timeObserver = self._player!.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC)),
+            forInterval: CMTime(seconds: 0.5, preferredTimescale: movieModel!.movie!.timescale),
             queue: .main) { [weak self] time in
                 if self?.player != nil {
                     // we only update time when we are enabled
                     if !self!.enablePeriodicTimeObserver {
                         return
                     }
-                    self!.currentTime = time
+                    if let movie = self?.movieModel?.movie {
+                        self!.currentTime = time.convertScale(movie.timescale, method: .roundHalfAwayFromZero)
+                    }
                 }
             }
 
