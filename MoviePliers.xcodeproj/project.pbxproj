@@ -22,6 +22,7 @@
 		178E91C72EE8F8BC00407E45 /* TracksDialogViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91C62EE8F8BC00407E45 /* TracksDialogViews.swift */; };
 		178E91C92EEB8F5100407E45 /* SavePanelAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91C82EEB8F5100407E45 /* SavePanelAccessoryView.swift */; };
 		178E91CB2EEE1C5D00407E45 /* GetInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91CA2EEE1C5D00407E45 /* GetInfoView.swift */; };
+		178E91CF2EF9F39E00407E45 /* TimeDialogViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178E91CE2EF9F39E00407E45 /* TimeDialogViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		178E91C62EE8F8BC00407E45 /* TracksDialogViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TracksDialogViews.swift; sourceTree = "<group>"; };
 		178E91C82EEB8F5100407E45 /* SavePanelAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavePanelAccessoryView.swift; sourceTree = "<group>"; };
 		178E91CA2EEE1C5D00407E45 /* GetInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetInfoView.swift; sourceTree = "<group>"; };
+		178E91CE2EF9F39E00407E45 /* TimeDialogViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeDialogViews.swift; sourceTree = "<group>"; };
 		17D18D6F2EAED627008B239E /* MoviePliers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoviePliers.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -64,6 +66,7 @@
 				178E91B12EDE267200407E45 /* MoviePlayerControlsView.swift */,
 				178E91B72EDE267200407E45 /* SelectableRangeSlider.swift */,
 				178E91C62EE8F8BC00407E45 /* TracksDialogViews.swift */,
+				178E91CE2EF9F39E00407E45 /* TimeDialogViews.swift */,
 				178E91CA2EEE1C5D00407E45 /* GetInfoView.swift */,
 				178E91C82EEB8F5100407E45 /* SavePanelAccessoryView.swift */,
 				178E91B52EDE267200407E45 /* MovieViewModel.swift */,
@@ -173,6 +176,7 @@
 				178E91BD2EDE267200407E45 /* MoviePlayerControlsView.swift in Sources */,
 				178E91BE2EDE267200407E45 /* MoviePliersApp.swift in Sources */,
 				178E91BF2EDE267200407E45 /* MovieStore.swift in Sources */,
+				178E91CF2EF9F39E00407E45 /* TimeDialogViews.swift in Sources */,
 				178E91C02EDE267200407E45 /* MovieView.swift in Sources */,
 				178E91C12EDE267200407E45 /* MovieViewModel.swift in Sources */,
 				178E91C22EDE267200407E45 /* AVExtensions.swift in Sources */,

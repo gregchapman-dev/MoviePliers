@@ -128,6 +128,14 @@ struct ContentView: View {
             // Present the delete tracks dialog when appropriate
             DeleteTracksDialogView(viewModel: $viewModel)
         }
+        .sheet(isPresented: $viewModel.selectIsPresented) {
+            // Present the selection dialog when appropriate
+            SelectionDialogView(viewModel: $viewModel)
+        }
+        .sheet(isPresented: $viewModel.gotoTimeIsPresented) {
+            // Present the go to time dialog when appropriate
+            GoToTimeDialogView(viewModel: $viewModel)
+        }
         .background(
             HostingWindowFinder { window in
                 viewModel.window = window
