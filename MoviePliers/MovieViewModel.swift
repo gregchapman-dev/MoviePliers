@@ -76,8 +76,9 @@ class MovieViewModel: Identifiable {
     var enableTracksIsPresented: Bool = false
     var deleteTracksIsPresented: Bool = false
     
-    // Get Info (in all its glory)
-    var infoViewIsPresented: Bool = false
+    // Select... and Go To...
+    var selectIsPresented: Bool = false
+    var gotoTimeIsPresented: Bool = false
 
     var window: NSWindow?
     var originalDelegate: NSWindowDelegate?

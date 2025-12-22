@@ -181,6 +181,13 @@ struct MenuCommands: Commands {
                     }
                 }
             }.keyboardShortcut("A", modifiers: .command)
+            Button("Select...") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.selectIsPresented = true
+                    }
+                }
+            }
             Button("Select None") {
                 print("select none")
                 if let id = activeMovieID {
@@ -212,6 +219,13 @@ struct MenuCommands: Commands {
                 }
             }
             Divider()
+            Button("Go To...") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.gotoTimeIsPresented = true
+                    }
+                }
+            }
             Button("Find...") {
                 print("find")
             }.keyboardShortcut("F", modifiers: .command)
@@ -277,6 +291,225 @@ struct MenuCommands: Commands {
             Button("Choose Language...") {
                 print("choose language")
             }
+        }
+    }
+}
+
+struct MenuCommandsWithoutMovie: Commands {
+    @Environment(\.openWindow) private var openWindow
+    @FocusedBinding(\.activeMovieID) var activeMovieID // get the active movie (the one in the focused view/window
+    @State private var showingFileImporter = false
+    
+    var body: some Commands {
+        CommandGroup(replacing: .newItem) {
+            Button("New") {
+                let newMovieViewModel = movieStore.newMovieViewModel()
+                openWindow(id: "movie-window", value: newMovieViewModel.id)
+            }
+            .keyboardShortcut("N", modifiers: .command)
+            Button("Open...") {
+                showingFileImporter = true
+                print("open movie")
+            }
+            .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [.quickTimeMovie, .mpeg4Movie]) { result in
+                switch result {
+                case .success(let url):
+                    // Handle the selected file URL here
+                    print("Selected file URL: \(url)")
+                    if let viewModel = try? movieStore.openMovie(at: url) {
+                        openWindow(id: "movie-window", value: viewModel.id)
+                    }
+                    else {
+                        print("could not open movie at URL: \(url)")
+                    }
+                case .failure(let error):
+                    // Handle any errors that occurred during file picking
+                    print("File import error: \(error.localizedDescription)")
+                }
+            }
+            .keyboardShortcut("O", modifiers: .command)
+
+//            Button("Open Image Sequence...") {
+//                print("open image sequence")
+//                let info = movieStore.openImageSequence(url: URL(string: "file://imageFolder")!)
+//                openWindow(id: "movie-window", value: info.id)
+//            }
+        }
+        CommandGroup(replacing: .saveItem) {
+            Button("Close") {
+                // print("activeMovieID = \($activeMovieInfo.id.uuidString)")
+                if let id = activeMovieID, let viewModel = movieStore.getMovieViewModel(for: id) {
+                    viewModel.closeView()
+                    return
+                }
+                print("no activeMovieID or no viewModel for activeMovieID, closing key window instead")
+                NSApplication.shared.keyWindow?.close()
+            }
+            .keyboardShortcut("W", modifiers: .command)
+
+            Button("Save") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.saveOrSaveAs()
+                    }
+                }
+            }
+            .keyboardShortcut("S", modifiers: .command)
+
+            Button("Save As...") {
+                print("save as")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.showSaveAsPanel(suggestedFilename: "New Movie.mov")
+                    }
+                }
+            }
+            Divider()
+            Button("Export...") {
+                print("export")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        // TODO: replace with export panel (allowing selection of codecs, and file formats like AVI).
+                        viewModel.showSaveAsPanel(suggestedFilename: "New Movie.mov")
+                    }
+                }
+            }
+        }
+
+        CommandGroup(replacing: .undoRedo) {
+            Button("Undo") {
+                print("undo")
+            }.keyboardShortcut("Z", modifiers: .command)
+            Button("Redo") {
+                print("redo")
+            }.keyboardShortcut("Z", modifiers: [.shift, .command])
+        }
+
+        CommandGroup(replacing: .pasteboard) {
+            Button("Cut") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.cut()
+                    }
+                }
+            }.keyboardShortcut("X", modifiers: .command)
+
+            Button("Copy") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.copy()
+                    }
+                }
+            }.keyboardShortcut("C", modifiers: .command)
+            Button("Paste") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.paste()
+                    }
+                }
+            }.keyboardShortcut("V", modifiers: .command)
+                .modifierKeyAlternate(.shift) {
+                    Button("Replace") {
+                        if let id = activeMovieID {
+                            if let viewModel = movieStore.getMovieViewModel(for: id) {
+                                viewModel.replace()
+                            }
+                        }
+                    }
+                }
+                .modifierKeyAlternate(.option) {
+                    Button("Add") {
+                        if let id = activeMovieID {
+                            if let viewModel = movieStore.getMovieViewModel(for: id) {
+                                viewModel.add()
+                            }
+                        }
+                    }
+                }
+                .modifierKeyAlternate([.option, .shift]) {
+                    Button("Add Scaled") {
+                        if let id = activeMovieID {
+                            if let viewModel = movieStore.getMovieViewModel(for: id) {
+                                viewModel.addScaled()
+                            }
+                        }
+                    }
+                }
+            Button("Clear") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.clear()
+                    }
+                }
+            }.keyboardShortcut(.delete, modifiers: [])
+                .modifierKeyAlternate(.option) {
+                    Button("Trim") {
+                        if let id = activeMovieID {
+                            if let viewModel = movieStore.getMovieViewModel(for: id) {
+                                viewModel.trim()
+                            }
+                        }
+                   }
+                }
+            Divider()
+            Button("Select All") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.selectAll()
+                    }
+                }
+            }.keyboardShortcut("A", modifiers: .command)
+            Button("Select...") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.selectIsPresented = true
+                    }
+                }
+            }
+            Button("Select None") {
+                print("select none")
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.selectNone()
+                    }
+                }
+            }.keyboardShortcut("D", modifiers: .command)
+            Divider()
+            Button("Extract Tracks...") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.extractTracksIsPresented = true
+                    }
+                }
+            }
+            Button("Delete Tracks...") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.deleteTracksIsPresented = true
+                    }
+                }
+            }
+            Button("Enable Tracks...") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.enableTracksIsPresented = true
+                    }
+                }
+            }
+            Divider()
+            Button("Go To...") {
+                if let id = activeMovieID {
+                    if let viewModel = movieStore.getMovieViewModel(for: id) {
+                        viewModel.gotoTimeIsPresented = true
+                    }
+                }
+            }
+            Button("Find...") {
+                print("find")
+            }.keyboardShortcut("F", modifiers: .command)
+            Button("Find Again") {
+                print("find again")
+            }.keyboardShortcut("G", modifiers: .command)
         }
     }
 }

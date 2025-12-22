@@ -42,7 +42,7 @@ struct MoviePliersApp: App {
             }
         }
         .commands {
-            MenuCommands()
+            MenuCommandsWithoutMovie()
         }
         .restorationBehavior(.disabled)
         
