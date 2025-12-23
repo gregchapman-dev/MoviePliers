@@ -4,15 +4,34 @@ import AVFoundation
 struct SelectionDialogView: View {
     @Environment(\.openWindow) private var openWindow
     @Binding var viewModel: MovieViewModel
-    @State private var newSelection: CMTimeRange? = nil
+    @State private var newSelection: CMTimeRange = .invalid
 
     var body: some View {
         VStack {
-            Text("Enter selection start and duration (or end):")
+            Text("Enter selection start and duration:")
             
             HStack {
+                Text("Start (hh:mm:ss.sss):")
+                TextField("", value: $newSelection.start, format: .cmTimeHMSMillis)
+            }
+            HStack {
+                Text("Start (value/timescale):")
+                TextField("", value: $newSelection.start, format: .cmTimeFraction)
+            }
+            HStack {
+                Text("Duration (hh:mm:ss.sss):")
+                TextField("", value: $newSelection.duration, format: .cmTimeHMSMillis)
+            }
+            HStack {
+                Text("Duration (value/timescale):")
+                TextField("", value: $newSelection.duration, format: .cmTimeFraction)
+            }
+
+            HStack {
                 Button("OK", role: .destructive) {
-                    viewModel.selection = newSelection
+                    if newSelection.isValid {
+                        viewModel.selection = newSelection
+                    }
                     viewModel.selectIsPresented = false // Dismiss the sheet
                 }
                 Button("Cancel", role: .cancel) {
@@ -168,7 +187,7 @@ struct CMTimeHMSMillisParseStrategy: ParseStrategy {
             }
             minutes = optionalMinutes
         }
-        else if value.count == 3 {
+        else if values.count == 3 {
             guard let optionalHours = Int(values[0]), let optionalMinutes = Int(values[1]) else {
                 throw FormattingError.invalidCMTimeHMSMillis
             }
