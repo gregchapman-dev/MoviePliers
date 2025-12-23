@@ -209,18 +209,18 @@ struct GetInfoView: View {
     private var movieTimeView: some View {
         VStack {
             Divider()
-            Text("Current Time: \(viewModel.currentTime.formatted(.withMillisecondsDecimalAndFraction))")
+            Text("Current Time: \(viewModel.currentTime.formatted(.withHMSMillisAndFraction))")
                 //.frame(alignment: .leading)
             Divider()
-            Text("Duration: \(viewModel.duration.formatted(.withMillisecondsDecimalAndFraction))")
+            Text("Duration: \(viewModel.duration.formatted(.withHMSMillisAndFraction))")
                 //.frame(alignment: .leading)
             Divider()
             if let selection = viewModel.selection {
-                Text("Selection Start: \(selection.start.formatted(.withMillisecondsDecimalAndFraction))")
+                Text("Selection Start: \(selection.start.formatted(.withHMSMillisAndFraction))")
                     //.frame(alignment: .leading)
-                Text("Selection End: \(selection.end.formatted(.withMillisecondsDecimalAndFraction))")
+                Text("Selection End: \(selection.end.formatted(.withHMSMillisAndFraction))")
                     //.frame(alignment: .leading)
-                Text("Selection Duration: \(selection.duration.formatted(.withMillisecondsDecimalAndFraction))")
+                Text("Selection Duration: \(selection.duration.formatted(.withHMSMillisAndFraction))")
                     //.frame(alignment: .leading)
             }
             else {

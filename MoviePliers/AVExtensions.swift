@@ -229,13 +229,57 @@ extension AVAssetTrack {
     }
 }
 
+
+extension CMTime: @retroactive Codable {
+    enum CodingKeys: String, CodingKey {
+        case value
+        case timescale
+        case flags
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let value = try container.decode(CMTimeValue.self, forKey: .value)
+        let timescale = try container.decode(CMTimeScale.self, forKey: .timescale)
+        let flags: UInt32 = try container.decode(UInt32.self, forKey: .flags)
+        self.init(value: value, timescale: timescale, flags: CMTimeFlags(rawValue: flags), epoch: 0)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(value, forKey: .value)
+        try container.encode(timescale, forKey: .timescale)
+        try container.encode(flags.rawValue, forKey: .flags)
+    }
+}
+
+extension CMTimeRange: @retroactive Codable {
+    enum CodingKeys: String, CodingKey {
+        case start
+        case duration
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let start = try container.decode(CMTime.self, forKey: .start)
+        let duration = try container.decode(CMTime.self, forKey: .duration)
+        self.init(start: start, duration: duration)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(start, forKey: .start)
+        try container.encode(duration, forKey: .duration)
+    }
+}
+
 enum CMTimeFormat {
     case withFraction
-    case withMillisecondsDecimal
-    case withMillisecondsDecimalAndFraction
+    case withHMSMillis
+    case withHMSMillisAndFraction
 }
 extension CMTime {
-    func formatted(_ format: CMTimeFormat = .withMillisecondsDecimal) -> String {
+    func formatted(_ format: CMTimeFormat = .withHMSMillis) -> String {
         let timeInSeconds = self.seconds
         guard !timeInSeconds.isNaN else {
             return "nan"
@@ -243,27 +287,16 @@ extension CMTime {
         guard !timeInSeconds.isInfinite else {
             return "inf"
         }
- 
-        var seconds = Int(timeInSeconds)
-        let hours = seconds / 3600
-        seconds -= hours * 3600
-        let minutes = seconds / 60
-        seconds -= minutes * 60
-    
+        
         switch format {
         case .withFraction:
-            return String(format: "%ld/%d", self.value, self.timescale)
-        case .withMillisecondsDecimal:
-            let millisecs = Int(round((timeInSeconds - Double(Int(timeInSeconds))) * 1000.0))
-            if millisecs != 0 {
-                return String(format: "%d:%02d:%02d.%03d", hours, minutes, seconds, millisecs)
-            }
-            else {
-                return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-            }
-        case .withMillisecondsDecimalAndFraction:
-            let millisecs = Int(round((timeInSeconds - Double(Int(timeInSeconds))) * 1000.0))
-            return String(format: "%d:%02d:%02d.%03d (%ld/%d)", hours, minutes, seconds, millisecs, self.value, self.timescale)
+            return CMTimeFractionFormatStyle().format(self)
+        case .withHMSMillis:
+            return CMTimeHMSMillisFormatStyle().format(self)
+        case .withHMSMillisAndFraction:
+            let fraction = CMTimeFractionFormatStyle().format(self)
+            let hmsMillis = CMTimeHMSMillisFormatStyle().format(self)
+            return "\(hmsMillis) (\(fraction))"
         }
     }
 }
