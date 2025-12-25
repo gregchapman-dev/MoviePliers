@@ -4,33 +4,55 @@ import AVFoundation
 struct SelectionDialogView: View {
     @Environment(\.openWindow) private var openWindow
     @Binding var viewModel: MovieViewModel
-    @State private var newSelection: CMTimeRange = .invalid
-
+    @State private var newSelectionStart: CMTime?
+    @State private var newSelectionDuration: CMTime?
+    @State private var newSelectionEnd: CMTime?
+    
     var body: some View {
         VStack {
             Text("Enter selection start and duration:")
             
             HStack {
-                Text("Start (hh:mm:ss.sss):")
-                TextField("", value: $newSelection.start, format: .cmTimeHMSMillis)
+                Text("Start:")
+                TextField("hh:mm:ss.sss", value: $newSelectionStart, format: CMTimeHMSMillisFormatStyle(preferredTimeScale: viewModel.movieTimeScale ?? 1000))
             }
             HStack {
-                Text("Start (value/timescale):")
-                TextField("", value: $newSelection.start, format: .cmTimeFraction)
+                Text("Start:")
+                TextField("value/timescale", value: $newSelectionStart, format: .cmTimeFraction)
             }
             HStack {
-                Text("Duration (hh:mm:ss.sss):")
-                TextField("", value: $newSelection.duration, format: .cmTimeHMSMillis)
+                Text("End:")
+                TextField("hh:mm:ss.sss", value: $newSelectionEnd, format: CMTimeHMSMillisFormatStyle(preferredTimeScale: viewModel.movieTimeScale ?? 1000))
+                    .onChange(of: newSelectionEnd, initial: true) { oldValue, newValue in
+                        onChangeOfSelectionEnd(oldValue, newValue)
+                    }
             }
             HStack {
-                Text("Duration (value/timescale):")
-                TextField("", value: $newSelection.duration, format: .cmTimeFraction)
+                Text("End:")
+                TextField("value/timescale", value: $newSelectionEnd, format: .cmTimeFraction)
+                    .onChange(of: newSelectionEnd, initial: true) { oldValue, newValue in
+                        onChangeOfSelectionEnd(oldValue, newValue)
+                    }
+            }
+            HStack {
+                Text("Duration:")
+                TextField("hh:mm:ss.sss", value: $newSelectionDuration, format: CMTimeHMSMillisFormatStyle(preferredTimeScale: viewModel.movieTimeScale ?? 1000))
+                    .onChange(of: newSelectionDuration, initial: true) { oldValue, newValue in
+                        onChangeOfSelectionDuration(oldValue, newValue)
+                    }
+            }
+            HStack {
+                Text("Duration:")
+                TextField("value/timescale", value: $newSelectionDuration, format: .cmTimeFraction)
+                    .onChange(of: newSelectionDuration, initial: true) { oldValue, newValue in
+                        onChangeOfSelectionDuration(oldValue, newValue)
+                    }
             }
 
             HStack {
                 Button("OK", role: .destructive) {
-                    if newSelection.isValid {
-                        viewModel.selection = newSelection
+                    if let newSelectionStart, let newSelectionEnd {
+                        viewModel.selection = CMTimeRange(start: newSelectionStart, end: newSelectionEnd)
                     }
                     viewModel.selectIsPresented = false // Dismiss the sheet
                 }
@@ -41,6 +63,72 @@ struct SelectionDialogView: View {
         }
         .padding(50) // Add padding for better appearance on macOS sheets
         .frame(minWidth: 400, minHeight: 300)
+    }
+    
+    func onChangeOfSelectionStart(_ newValue: CMTime?) {
+        
+    }
+    
+    func onChangeOfSelectionEnd(_ oldEnd: CMTime?, _ newEnd: CMTime?) {
+        if newEnd == nil {
+            // initial case, initialize from viewModel
+            newSelectionStart = viewModel.selection?.start
+            newSelectionEnd = viewModel.selection?.end
+            newSelectionDuration = viewModel.selection?.duration
+            return
+        }
+        
+        if newEnd == oldEnd {
+            // we just tabbed or clicked into this textfield, no change at all (don't recompute anything!)
+            return
+        }
+        
+        if let timescale = viewModel.movieTimeScale {
+            if let newSelEnd = newSelectionEnd, newSelEnd.timescale != timescale {
+                newSelectionEnd = newSelEnd.convertScale(timescale, method: .roundHalfAwayFromZero)
+            }
+        }
+        
+        if let newSelectionStart, let newSelectionEnd {
+            let newDuration = newSelectionEnd - newSelectionStart
+            if let timescale = viewModel.movieTimeScale {
+                newSelectionDuration = newDuration.convertScale(timescale, method: .roundHalfAwayFromZero)
+            }
+            else {
+                newSelectionDuration = newDuration
+            }
+        }
+    }
+    
+    func onChangeOfSelectionDuration(_ oldDuration: CMTime?, _ newDuration: CMTime?) {
+        if newDuration == nil {
+            // initial case, initialize from viewModel
+            newSelectionStart = viewModel.selection?.start
+            newSelectionEnd = viewModel.selection?.end
+            newSelectionDuration = viewModel.selection?.duration
+            return
+        }
+        
+        if newDuration == oldDuration {
+            // we just tabbed or clicked into this textfield, no change at all (don't recompute anything!)
+            return
+        }
+        
+        if let timescale = viewModel.movieTimeScale {
+            if let newDur = newSelectionDuration, newDur.timescale != timescale {
+                newSelectionDuration = newDur.convertScale(timescale, method: .roundHalfAwayFromZero)
+            }
+        }
+        
+        if let newSelectionStart, let newSelectionDuration {
+            let newEnd = newSelectionStart + newSelectionDuration
+            if let timescale = viewModel.movieTimeScale {
+                newSelectionEnd = newEnd.convertScale(timescale, method: .roundHalfAwayFromZero)
+            }
+            else {
+                newSelectionEnd = newEnd
+            }
+        }
     }
 }
 
@@ -53,7 +141,7 @@ struct GoToTimeDialogView: View {
         VStack {
             Text("Enter time to go to:")
 
-            TextField("Time (hh:mm:ss.sss)", value: $newTime, format: .cmTimeHMSMillis)
+            TextField("Time (hh:mm:ss.sss)", value: $newTime, format: CMTimeHMSMillisFormatStyle(preferredTimeScale: viewModel.movieTimeScale ?? 1000))
             TextField("Time (value/timescale)", value: $newTime, format: .cmTimeFraction)
 
             HStack {
@@ -78,9 +166,6 @@ struct GoToTimeDialogView: View {
 extension FormatStyle where Self == CMTimeFractionFormatStyle {
     static var cmTimeFraction: CMTimeFractionFormatStyle {
         CMTimeFractionFormatStyle()
-    }
-    static var cmTimeHMSMillis: CMTimeHMSMillisFormatStyle {
-        CMTimeHMSMillisFormatStyle()
     }
 }
 
@@ -134,7 +219,13 @@ struct CMTimeHMSMillisParseStrategy: ParseStrategy {
     enum FormattingError: Error {
         case invalidCMTimeHMSMillis
     }
-
+    
+    var preferredTimeScale: CMTimeScale
+    
+    init(preferredTimeScale: CMTimeScale = 1000) {
+        self.preferredTimeScale = preferredTimeScale
+    }
+    
     func parse(_ value: String) throws -> CMTime {
         if value.isEmpty {
             throw FormattingError.invalidCMTimeHMSMillis
@@ -196,18 +287,27 @@ struct CMTimeHMSMillisParseStrategy: ParseStrategy {
         }
         
         let totalSeconds: Int64 = Int64(hours) * 3600 + Int64(minutes) * 60 + Int64(seconds)
-        if milliseconds != 0 {
-            return CMTime(value: (totalSeconds * 1000) + Int64(milliseconds), timescale: 1000)
-        }
-        else {
-            return CMTime(value: totalSeconds, timescale: 1)
-        }
+        return CMTime(
+            value: (totalSeconds * Int64(self.preferredTimeScale))
+                + (Int64(milliseconds) * Int64(self.preferredTimeScale) / Int64(1000)),
+            timescale: self.preferredTimeScale)
     }
 }
 
 struct CMTimeHMSMillisFormatStyle: ParseableFormatStyle {
     typealias FormatInput = CMTime
     typealias FormatOutput = String
+
+    var preferredTimeScale: CMTimeScale
+    
+    // Defines how the String input from the user is parsed back into the CMTime data
+    var parseStrategy: CMTimeHMSMillisParseStrategy
+
+
+    init(preferredTimeScale: CMTimeScale = 1000) {
+        self.preferredTimeScale = preferredTimeScale
+        self.parseStrategy = CMTimeHMSMillisParseStrategy(preferredTimeScale: preferredTimeScale)
+    }
 
     // Defines how the CMTime data is displayed as a String (hh:mm:ss.sss) in the UI
     func format(_ value: CMTime) -> String {
@@ -225,10 +325,5 @@ struct CMTimeHMSMillisFormatStyle: ParseableFormatStyle {
         seconds -= minutes * 60
         let millisecs: Int = Int(round((timeInSeconds - Double(Int(timeInSeconds))) * 1000.0))
         return String(format: "%d:%02d:%02d.%03d", hours, minutes, seconds, millisecs)
-    }
-
-    // Defines how the String input from the user is parsed back into the CMTime data
-    var parseStrategy: CMTimeHMSMillisParseStrategy {
-        CMTimeHMSMillisParseStrategy()
     }
 }

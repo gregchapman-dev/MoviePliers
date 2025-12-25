@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreMedia
 import AVFoundation
 import AppKit
 
@@ -60,6 +61,7 @@ class MovieViewModel: Identifiable {
     var id: UUID
     var movieModel: MovieModel?
     var isLoaded: Bool
+    var movieTimeScale: CMTimeScale?
     var currentTime: CMTime
     var duration: CMTime
     var selection: CMTimeRange?
@@ -105,6 +107,7 @@ class MovieViewModel: Identifiable {
         
         if let movie {
             self.movieModel = MovieModel(movie: movie, id: self.id, url: url, parent: self)
+            self.movieTimeScale = movie.timescale
         }
     }
     
@@ -144,7 +147,7 @@ class MovieViewModel: Identifiable {
         self.currentTime = .zero
         
         self.timeObserver = self._player!.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 0.5, preferredTimescale: movieModel!.movie!.timescale),
+            forInterval: CMTime(seconds: 0.5, preferredTimescale: self.movieTimeScale ?? 1000),
             queue: .main) { [weak self] time in
                 if self?.player != nil {
                     // we only update time when we are enabled
@@ -152,7 +155,12 @@ class MovieViewModel: Identifiable {
                         return
                     }
                     if let movie = self?.movieModel?.movie {
-                        self!.currentTime = time.convertScale(movie.timescale, method: .roundHalfAwayFromZero)
+                        var currTime = time.convertScale(movie.timescale, method: .roundHalfAwayFromZero)
+                        if currTime.hasBeenRounded {
+                            // ignore roundedness
+                            currTime = CMTime(value: currTime.value, timescale: currTime.timescale)
+                        }
+                        self!.currentTime = currTime
                     }
                 }
             }
@@ -310,9 +318,10 @@ class MovieViewModel: Identifiable {
     }
     
     func movieDidLoad() {
-        if let movieModel = self.movieModel {
+        if let movieModel = self.movieModel, let movie = movieModel.movie {
             self.duration = movieModel.duration
             self.trackInfos = self.makeTrackInfos(from: movieModel)
+            self.movieTimeScale = movie.timescale
             self.isLoaded = true
         }
     }
@@ -324,6 +333,7 @@ class MovieViewModel: Identifiable {
             self.isModified = true
             self.duration = movie.duration
             self.trackInfos = self.makeTrackInfos(from: movieModel)
+            self.movieTimeScale = movie.timescale
 
             if let player = self.player {
                 let newPlayerItem = AVPlayerItem(asset: movie)
