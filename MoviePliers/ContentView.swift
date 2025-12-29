@@ -112,7 +112,7 @@ struct ContentView: View {
     @State private var viewModel: MovieViewModel
     var body: some View {
         VStack {
-            Text("movieID: \(viewModel.id)")
+            //Text("movieID: \(viewModel.id)")
             MoviePlayerControlsView(viewModel: $viewModel)
         }
         .focusedSceneValue(\.activeMovieID, $viewModel.id) // stash off active movieID (when we have focus)

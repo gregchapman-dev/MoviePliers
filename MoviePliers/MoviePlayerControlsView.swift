@@ -24,11 +24,12 @@ struct MoviePlayerControlsView: View {
             timelineView
         }
         .background(
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.7)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            .clear
+//            LinearGradient(
+//                colors: [.clear, .black.opacity(0.7)],
+//                startPoint: .top,
+//                endPoint: .bottom
+//            )
         )
     }
  
@@ -44,13 +45,13 @@ struct MoviePlayerControlsView: View {
             HStack {
                 Text(viewModel.currentTime.formatted())
                     .font(.caption)
-                    .foregroundColor(.white)
+                    .foregroundColor(.black)
  
                 Spacer()
  
                 Text(viewModel.duration.formatted())
                     .font(.caption)
-                    .foregroundColor(.white)
+                    .foregroundColor(.black)
             }
         }
         .padding(.horizontal)

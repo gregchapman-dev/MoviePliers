@@ -9,11 +9,11 @@ struct SelectableRangeSlider: View {
     @FocusState private var focused: Bool
     
     let sliderHeight: CGFloat = 10
-    let thumbHeight: CGFloat = 24
-    let thumbWidth: CGFloat = 6
-    let trackColor = Color.gray
-    let selectionColor = Color.black
-    let thumbColor = Color.white
+    let thumbHeight: CGFloat = 20
+    let thumbWidth: CGFloat = 10
+    let trackColor = Color.gray.opacity(0.5)
+    let selectionColor = Color.black.opacity(0.5)
+    let thumbColor = Color.gray
 
     var body: some View {
         GeometryReader { geometry in
@@ -22,7 +22,7 @@ struct SelectableRangeSlider: View {
                 Rectangle()
                     .fill(trackColor)
                     .frame(height: sliderHeight)
-                    .cornerRadius(sliderHeight / 2)
+                    .border(Color.black)
                 
                 // The selected range visualization
                 Rectangle()
@@ -32,11 +32,14 @@ struct SelectableRangeSlider: View {
                 
                 Text("currentValue=\(makeCMTimeString(viewModel.currentTime))")
 
-                // The thumb
+                // The thumb (transparent, with an opaque border)
                 Rectangle()
-                    .fill(thumbColor)
+                    .fill(.black.opacity(0.0))
                     .frame(width: thumbWidth, height: thumbHeight)
-                    .cornerRadius(thumbHeight / 4)
+                    .overlay(
+                        Rectangle()
+                            .stroke(thumbColor, lineWidth: 2)
+                    )
                     .offset(x: convertTimeToThumbOffset(for: viewModel.currentTime, width: geometry.size.width))
                     .gesture(
                         DragGesture(minimumDistance: 0)
@@ -194,6 +197,7 @@ struct SelectableRangeSlider: View {
     
     // Helper to calculate the visual width of the selected range
     func selectionWidth( _ width: CGFloat) -> CGFloat {
+        if viewModel.duration == .zero { return 0.0 }
         let totalRange = viewModel.duration.seconds
         let selectedRange = viewModel.selection?.duration.seconds ?? 0.0
         let output = CGFloat(selectedRange / totalRange) * width
