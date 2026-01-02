@@ -7,7 +7,7 @@ struct SelectableRangeSlider: View {
     @State private var shiftPressed: Bool
     @State private var optionPressed: Bool
     @FocusState private var focused: Bool
-    
+
     let sliderHeight: CGFloat = 10
     let thumbHeight: CGFloat = 20
     let thumbWidth: CGFloat = 10
@@ -40,7 +40,7 @@ struct SelectableRangeSlider: View {
                         Rectangle()
                             .stroke(thumbColor, lineWidth: 2)
                     )
-                    .offset(x: convertTimeToThumbOffset(for: viewModel.currentTime, width: geometry.size.width))
+                    .offset(x: convertMovieTimeToThumbOffset(for: viewModel.currentTime, width: geometry.size.width))
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
@@ -89,25 +89,25 @@ struct SelectableRangeSlider: View {
         self.optionPressed = false
     }
     
-    // Convert tap point to a slider value
-    func convertValue(for point: CGPoint, width: CGFloat) -> CMTime {
-        if point.x < 0.0 { return .zero }
-        let percentage = Double(point.x / width)
+    // Convert slider thumb x coordinate to a movie time
+    func convertThumbOffsetToMovieTime(offset: CGFloat, width: CGFloat) -> CMTime {
+        if offset < 0.0 { return .zero }
+        let percentage = Double(offset / width)
         if percentage > 1.0 { return viewModel.duration }
         let cgFloatTime = viewModel.duration.seconds * percentage
         return CMTimeMakeWithSeconds(cgFloatTime, preferredTimescale: viewModel.movieModel!.movie!.timescale)
     }
     
-    // Convert slider value to thumb x coordinate
-    func convertTimeToThumbOffset(for time: CMTime, width: CGFloat) -> CGFloat {
+    // Convert movie time to slider thumb x coordinate
+    func convertMovieTimeToThumbOffset(for time: CMTime, width: CGFloat) -> CGFloat {
         let percentage: CGFloat = CGFloat(time.seconds / viewModel.duration.seconds)
-        return (width * percentage)
+        return (width * percentage) - (thumbWidth / 2)
     }
     
     func handleDragOrTap(point: CGPoint, width: CGFloat) {
         Task {
-            let newMovieTime = convertValue(for: point, width: width)
-            let oldMovieTime = viewModel.currentTime
+            let newMovieTime: CMTime = convertThumbOffsetToMovieTime(offset: point.x, width: width)
+            let oldMovieTime: CMTime = viewModel.currentTime
             await viewModel.seek(to: newMovieTime)
             handleSelection(oldTime: oldMovieTime, newTime: newMovieTime, clearIfUnshifted: true)
         }
