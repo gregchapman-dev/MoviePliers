@@ -67,6 +67,10 @@ struct SelectableRangeSlider: View {
                 handleLeftArrow()
                 return .handled
             }
+            .onKeyPress(keys: [.space]) { press in
+                handleSpace()
+                return .handled
+            }
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
@@ -193,6 +197,10 @@ struct SelectableRangeSlider: View {
             let newMovieTime = viewModel.currentTime
             handleSelection(oldTime: oldMovieTime, newTime: newMovieTime)
         }
+    }
+    
+    func handleSpace() {
+        viewModel.togglePlayPause()
     }
     
     // Helper to calculate the visual width of the selected range
