@@ -27,13 +27,19 @@ struct MoviePliersApp: App {
                     .navigationTitle(movieStore.getMovieViewModel(for: identifier)?.windowTitle ?? "unknown")
             }
             else {
-                MainView()
+                // If we ever have an initial window like Xcode does, uncomment this.
+                //MainView()
             }
         }
         .commands {
             MenuCommands()
         }
         .restorationBehavior(.disabled)
+        .defaultWindowPlacement { content, context in
+            let size = content.sizeThatFits(.unspecified)
+            //let displayBounds = context.defaultDisplay.visibleRect
+            return WindowPlacement(size: size)
+        }
 
         WindowGroup(id: "get-info-window", for: UUID.self) { movieID in
             if let identifier = movieID.wrappedValue {
@@ -45,7 +51,7 @@ struct MoviePliersApp: App {
             MenuCommandsWithoutMovie()
         }
         .restorationBehavior(.disabled)
-        
+
         Settings {
             // SettingsView()
         }

@@ -67,17 +67,17 @@ class MovieViewModel: Identifiable {
     var selection: CMTimeRange?
     var interestingTimes: [CMTime]
     var isModified: Bool
-    
+
     // includes first entry which actually is the movieInfo
     var trackInfos: [TrackInfo] = []
-    
+
     // various sheets that can be presented:
-    
+
     // extract/enable/delete tracks dialogs
     var extractTracksIsPresented: Bool = false
     var enableTracksIsPresented: Bool = false
     var deleteTracksIsPresented: Bool = false
-    
+
     // Select... and Go To...
     var selectIsPresented: Bool = false
     var gotoTimeIsPresented: Bool = false
@@ -85,7 +85,7 @@ class MovieViewModel: Identifiable {
     var window: NSWindow?
     var originalDelegate: NSWindowDelegate?
     var myDelegate: NSWindowDelegate?
-    
+
     var infoWindow: NSWindow?
     var originalInfoDelegate: NSWindowDelegate?
     var myInfoDelegate: NSWindowDelegate?
@@ -97,26 +97,26 @@ class MovieViewModel: Identifiable {
         else {
             self.id = UUID()
         }
-        
+
         self.currentTime = .zero
         self.enablePeriodicTimeObserver = true
         self.interestingTimes = []
         self.duration = .zero
         self.isLoaded = false
         self.isModified = false
-        
+
         if let movie {
             self.movieModel = MovieModel(movie: movie, id: self.id, url: url, parent: self)
             self.movieTimeScale = movie.timescale
         }
     }
-    
+
     deinit {
         if let timeObserver {
             self.player!.removeTimeObserver(timeObserver)
         }
     }
-    
+
     // playerItem
     var _playerItem: AVPlayerItem?
     var playerItem: AVPlayerItem? {
@@ -130,7 +130,7 @@ class MovieViewModel: Identifiable {
         self.currentTime = .zero
         return self._playerItem
     }
-    
+
     // player
     var timeObserver: Any?
     var enablePeriodicTimeObserver: Bool
@@ -145,7 +145,7 @@ class MovieViewModel: Identifiable {
         }
         self._player = AVPlayer(playerItem: self.playerItem!)
         self.currentTime = .zero
-        
+
         self.timeObserver = self._player!.addPeriodicTimeObserver(
             forInterval: CMTime(seconds: 0.5, preferredTimescale: self.movieTimeScale ?? 1000),
             queue: .main) { [weak self] time in
@@ -167,15 +167,15 @@ class MovieViewModel: Identifiable {
 
         return self._player
     }
-    
+
     func makeTrackInfos(from movieModel: MovieModel) -> [TrackInfo] {
         guard let movie = movieModel.movie else {
             return []
         }
-        
+
         // First trackInfo is actually movieInfo
         let movieInfo = self.makeTrackInfo(from: nil, of: movie)
-        
+
         // we group by mediaType (movieInfo goes first)
         var trackInfos: [TrackInfo] = [movieInfo]
         for mediaType in _orderedMediaTypes {
@@ -185,7 +185,7 @@ class MovieViewModel: Identifiable {
                 for track in tracks {
                     infos.append(self.makeTrackInfo(from: track, of: movie))
                 }
-                
+
                 if infos.count > 1 {
                     // add numeric suffix for uniqueness
                     var index: Int = 1
@@ -194,7 +194,7 @@ class MovieViewModel: Identifiable {
                         index += 1
                     }
                 }
-                
+
                 // append to result
                 for info in infos {
                     trackInfos.append(info)
@@ -203,11 +203,11 @@ class MovieViewModel: Identifiable {
         }
         return trackInfos
     }
-    
+
     func makeTrackInfo(from track: AVMutableMovieTrack?, of movie: AVMutableMovie) -> TrackInfo {
         return TrackInfo(track: track, movie: movie)
     }
-    
+
     func trackInfosForIds(trackInfoIds: Set<UUID>) -> [TrackInfo] {
         var trackInfos: [TrackInfo] = []
         for trackInfo in self.trackInfos {
@@ -217,21 +217,25 @@ class MovieViewModel: Identifiable {
         }
         return trackInfos
     }
-    
+
     var windowTitle: String {
         if let url = movieModel?.url {
             return url.lastPathComponent
         }
         return "New Movie"
     }
-    
+
     var isPlaying: Bool {
         if let player = self.player {
             return player.timeControlStatus == .playing
         }
         return false
     }
-    
+
+    var size: CGSize? {
+        return movieModel?.size
+    }
+
     func togglePlayPause() {
         if let player = self.player {
             if player.timeControlStatus == .paused {
@@ -242,7 +246,7 @@ class MovieViewModel: Identifiable {
             }
         }
     }
-    
+
     func seek(to time: CMTime) async {
         if let player = self.player {
             self.enablePeriodicTimeObserver = false
@@ -254,29 +258,29 @@ class MovieViewModel: Identifiable {
             self.currentTime = time
         }
     }
-    
+
     func getNextInterestingTime(after currentTime: CMTime) async throws -> CMTime {
         return try await self.movieModel?.movie?.getNextInterestingTime(after: currentTime) ?? currentTime
     }
-        
+
     func getPreviousInterestingTime(before currentTime: CMTime) async throws -> CMTime {
         return try await self.movieModel?.movie?.getPreviousInterestingTime(before: currentTime) ?? currentTime
     }
-        
+
     func stepForward() async throws {
         if self.player != nil && self.playerItem != nil {
             let nextTime = try await getNextInterestingTime(after: self.currentTime)
             await self.seek(to: nextTime)
         }
     }
-    
+
     func stepBackward() async throws {
         if self.player != nil && self.playerItem != nil {
             let previousTime = try await getPreviousInterestingTime(before: self.currentTime)
             await self.seek(to: previousTime)
         }
     }
-    
+
     func getNextSelectionOrMovieBoundaryTime(after currentTime: CMTime) -> CMTime {
         if self.selection == nil || self.selection!.isEmpty {
             return self.duration
@@ -289,7 +293,7 @@ class MovieViewModel: Identifiable {
         }
         return self.duration
     }
-        
+
     func getPreviousSelectionOrMovieBoundaryTime(before currentTime: CMTime) -> CMTime {
         if self.selection == nil || self.selection!.isEmpty {
             return .zero
@@ -309,14 +313,14 @@ class MovieViewModel: Identifiable {
             await self.seek(to: nextTime)
         }
     }
-    
+
     func optionStepBackward() async throws {
         if self.player != nil && self.playerItem != nil {
             let previousTime = getPreviousSelectionOrMovieBoundaryTime(before: self.currentTime)
             await self.seek(to: previousTime)
         }
     }
-    
+
     func movieDidLoad() {
         if let movieModel = self.movieModel, let movie = movieModel.movie {
             self.duration = movieModel.duration
@@ -325,10 +329,10 @@ class MovieViewModel: Identifiable {
             self.isLoaded = true
         }
     }
-    
+
     func movieDidChange(newCurrentTime: CMTime = .invalid, newSelection: CMTimeRange? = .invalid) {
         guard let player = self.player else { return }
-        
+
         if let movieModel = self.movieModel, let movie = movieModel.movie {
             self.isModified = true
             self.duration = movie.duration
@@ -339,7 +343,7 @@ class MovieViewModel: Identifiable {
                 let newPlayerItem = AVPlayerItem(asset: movie)
                 player.replaceCurrentItem(with: newPlayerItem)
             }
-            
+
             if newSelection != .invalid {
                 self.selection = newSelection
             }
@@ -355,7 +359,7 @@ class MovieViewModel: Identifiable {
             self.currentTime = .zero
         }
     }
-    
+
     func showSaveAsPanel(suggestedFilename: String) {
         let savePanel = NSSavePanel()
         savePanel.title = "Export"
@@ -419,7 +423,7 @@ class MovieViewModel: Identifiable {
             self.replaceMovieHeader()
         }
     }
-    
+
     func closeView() {
         guard let window = self.window else {
             print("no window for viewModel, closing keywindow")
@@ -436,7 +440,7 @@ class MovieViewModel: Identifiable {
             window.close()
             return
         }
-        
+
         if closer.windowShouldClose!(window) {
             print("closing window for viewModel")
             self.player?.pause()
@@ -452,11 +456,11 @@ class MovieViewModel: Identifiable {
                 self.infoWindow = nil
                 self.myInfoDelegate = nil
             }
-            
+
             window.close()
         }
     }
-    
+
     // editing functions
     func selectAll() {
         if self.duration == .zero {
@@ -466,7 +470,7 @@ class MovieViewModel: Identifiable {
             self.selection = CMTimeRange(start: .zero, end: self.duration)
         }
     }
-    
+
     func select(_ selection: CMTimeRange) {
         if !selection.isValid || selection.isEmpty {
             self.selection = nil
@@ -475,29 +479,29 @@ class MovieViewModel: Identifiable {
             self.selection = selection
         }
     }
-    
+
     func selectNone() {
         self.selection = nil
     }
-    
+
     func saveAs(_ url: URL, selfContained: Bool = false) {
         guard let movieModel = self.movieModel else { return }
-        
+
         Task {
             await movieModel.saveAs(url, selfContained: selfContained)
             self.isModified = false
         }
     }
-    
+
     func replaceMovieHeader() {
         guard let movieModel = self.movieModel else { return }
-        
+
         Task {
             await movieModel.replaceMovieHeader()
             self.isModified = false
         }
     }
-    
+
     // editing verbs (in edit menu)
     func copy() {
         guard let movieModel = self.movieModel, let selection = self.selection else { return }
@@ -506,18 +510,18 @@ class MovieViewModel: Identifiable {
             await movieModel.copy(fromTimeRange: selection)
         }
     }
-    
+
     func cut() {
         guard let movieModel = self.movieModel, let selection = self.selection else { return }
-        
+
         Task {
             await movieModel.copy(fromTimeRange: selection, andClear: true)
         }
     }
-    
+
     func paste() {
         guard let movieModel = self.movieModel else { return }
-        
+
         Task {
             await movieModel.paste(at: self.currentTime)
         }
@@ -525,12 +529,12 @@ class MovieViewModel: Identifiable {
 
     func add() {
         guard let movieModel = self.movieModel else { return }
-        
+
         Task {
             await movieModel.add(at: self.currentTime)
         }
     }
-    
+
     func addScaled() {
         // nil selection is ok, it means to scale to the entire movie duration
         guard let movieModel = self.movieModel else { return }
@@ -543,7 +547,7 @@ class MovieViewModel: Identifiable {
             }
         }
     }
-    
+
     func replace() {
         // paste, replacing current selection time range
         // nil selection NOT OK, because we're supposed to paste at selection.start
@@ -552,7 +556,7 @@ class MovieViewModel: Identifiable {
             await movieModel.replace(selection)
         }
     }
-    
+
     func clear() {
         // nil selection not ok (would be a no-op)
         guard let movieModel = self.movieModel, let selection = self.selection else { return }
@@ -560,7 +564,7 @@ class MovieViewModel: Identifiable {
             await movieModel.clear(selection)
         }
     }
-    
+
     func trim() {
         guard let movieModel = self.movieModel, let selection = self.selection else {
             return
@@ -569,7 +573,7 @@ class MovieViewModel: Identifiable {
             await movieModel.trim(selection)
         }
     }
-    
+
     func addTrack(_ trackInfo: TrackInfo) {
         guard let movieModel = self.movieModel else { return }
         guard let track = trackInfo.track else { return }
@@ -577,7 +581,7 @@ class MovieViewModel: Identifiable {
             await movieModel.addTrack(track, duration: trackInfo.duration)
         }
     }
-    
+
     func deleteTrack(_ trackInfo: TrackInfo) {
         guard let movieModel = self.movieModel else { return }
         guard let track = trackInfo.track else { return }
@@ -585,7 +589,7 @@ class MovieViewModel: Identifiable {
             await movieModel.deleteTrack(track)
         }
     }
-    
+
     func toggleTrackEnabled(_ trackInfo: TrackInfo) {
         guard let movieModel = self.movieModel else { return }
         guard let track = trackInfo.track else { return }
@@ -593,7 +597,7 @@ class MovieViewModel: Identifiable {
             await movieModel.toggleTrackEnabled(track)
         }
     }
-    
+
     func runCursorTest() {
         guard let movieModel = self.movieModel else { return }
         Task {

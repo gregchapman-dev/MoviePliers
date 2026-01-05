@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 import CoreMedia
  
 struct MoviePlayerControlsView: View {
@@ -7,34 +8,36 @@ struct MoviePlayerControlsView: View {
     var body: some View {
         VStack {
             // Video Player
-            MovieView(viewModel: $viewModel)
+            if let size = viewModel.size {
+                MovieView(viewModel: $viewModel)
+                    .frame(width:size.width, height:size.height)
+            }
+            else {
+                MovieView(viewModel: $viewModel)
+            }
             controlsView
         }
     }
  
     private var controlsView: some View {
-        HStack {
+        HStack(spacing: 8) {
             // Play/Pause Button
             Button(action: viewModel.togglePlayPause) {
-                Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.title)
+                Image(viewModel.isPlaying ? "Pause" : "Play")
             }
+            .frame(minWidth: 16, maxWidth: 16, minHeight: 16, maxHeight: 16, alignment: .center)
+            .clipShape(Rectangle())
             
             // Timeline
             timelineView
+                .frame(width: getSliderWidth(), alignment: .center)
         }
-        .background(
-            .clear
-//            LinearGradient(
-//                colors: [.clear, .black.opacity(0.7)],
-//                startPoint: .top,
-//                endPoint: .bottom
-//            )
-        )
+        .background(.clear)
+        .frame(width: viewModel.size?.width)
     }
  
     private var timelineView: some View {
-        VStack(spacing: 8) {
+        VStack {
             // Progress Slider
             SelectableRangeSlider(
                 viewModel: viewModel
@@ -42,18 +45,25 @@ struct MoviePlayerControlsView: View {
             .tint(.white)
  
             // Time Labels
-            HStack {
-                Text(viewModel.currentTime.formatted())
-                    .font(.caption)
-                    .foregroundColor(.black)
- 
-                Spacer()
- 
-                Text(viewModel.duration.formatted())
-                    .font(.caption)
-                    .foregroundColor(.black)
-            }
+           HStack {
+               Text(viewModel.currentTime.formatted())
+                   .font(.caption)
+                   .foregroundColor(.black)
+
+               Spacer()
+
+               Text(viewModel.duration.formatted())
+                   .font(.caption)
+                   .foregroundColor(.black)
+           }
         }
-        .padding(.horizontal)
+        //.padding(.horizontal)
+    }
+    
+    func getSliderWidth() -> CGFloat {
+        if let size = viewModel.size {
+            return size.width - 24
+        }
+        return 640
     }
 }

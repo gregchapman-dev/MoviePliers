@@ -167,6 +167,8 @@ struct ContentView: View {
 }
 
 struct MainView: View {
+    // Here we could put some sort of thing like Xcode does, with recent movies, etc.
+    // For now we do not display any window at all when the app launches.
     var body: some View {
         VStack {
             Text("main window (no content yet)")

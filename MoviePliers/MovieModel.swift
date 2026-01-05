@@ -12,7 +12,8 @@ class MovieModel: Identifiable {
     var movie: AVMutableMovie?
     var duration: CMTime = .zero
     var tracks: [AVMutableMovieTrack] = []
-    
+    var size: CGSize? = nil
+
     // url where the movie header is (either from file/open or from file/save/etc).
     // Doesn't exist for a new movie that has been edited, but not yet saved.
     var url: URL?
@@ -45,11 +46,35 @@ class MovieModel: Identifiable {
             return
         }
         
+        // reload duration
         do { self.duration = try await movie.load(.duration) }
         catch { self.duration = .zero }
         
+        // reload tracks
         do { self.tracks = try await movie.load(.tracks) }
         catch { self.tracks = [] }
+        
+        // reload movie size
+        for track in self.tracks {
+            // Currently just takes first video format description.  Should combine all video
+            // tracks' format descriptions, maybe by looking at the (currently non-existing)
+            // AVVideoComposition...
+            if track.mediaType == .video {
+                if let fdesc: CMVideoFormatDescription = track.formatDescriptions.first as! CMVideoFormatDescription? {
+                    var presentationSize = CMVideoFormatDescriptionGetPresentationDimensions(
+                        fdesc,
+                        usePixelAspectRatio: true,
+                        useCleanAperture: true
+                    )
+                    presentationSize = presentationSize.applying(track.preferredTransform)
+                    self.size = CGSize(
+                        width: abs(presentationSize.width),
+                        height: abs(presentationSize.height)
+                    )
+                    break
+                }
+            }
+        }
     }
     
     func movieDidChange(newCurrentTime: CMTime = .invalid, newSelection: CMTimeRange? = .invalid) async {
@@ -57,7 +82,7 @@ class MovieModel: Identifiable {
         await self.reloadMovie()
         self.parent?.movieDidChange(newCurrentTime: newCurrentTime, newSelection: newSelection)
     }
-        
+
     // saving operations
     func fileType(for url: URL) -> AVFileType? {
         // returns nil if url.pathExtension doesn't map to a fileType
