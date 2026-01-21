@@ -18,26 +18,40 @@ class MovieModel: Identifiable {
     // Doesn't exist for a new movie that has been edited, but not yet saved.
     var url: URL?
     
-    init(movie: AVMutableMovie? = nil, id: UUID? = nil, url: URL? = nil, parent: MovieViewModel? = nil) {
+    init(id: UUID? = nil, url: URL? = nil, parent: MovieViewModel? = nil) {
         if let id {
             self.id = id
         }
         else {
             self.id = UUID()
         }
-        
+
+        self.parent = parent
+
         if let url {
-            self.url = url
-        }
-        if let parent {
-            self.parent = parent
-        }
-        if let movie {
-            self.movie = movie
-            Task {
-                await self.reloadMovie()
-                parent?.movieDidLoad()
+            do {
+                self.url = url
+                self.movie = try AVMutableMovie(
+                    url: url,
+                    options: [
+                        AVURLAssetPreferPreciseDurationAndTimingKey : true
+                    ],
+                    error: ()
+                )
             }
+            catch {
+                
+            }
+        }
+        else {
+            self.movie = AVMutableMovie()
+            self.movie!.timescale = 60000  // good enough for 59.94 fps (1001/60000 frame duration)
+        }
+
+
+        Task {
+            await self.reloadMovie()
+            parent?.movieDidLoad()
         }
     }
     

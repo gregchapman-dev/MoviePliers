@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+import UniformTypeIdentifiers
 
 let qtMoviePasteboardType = NSPasteboard.PasteboardType(rawValue: "com.apple.quicktime-movie")
 
@@ -22,9 +23,7 @@ class MovieStore {
     }
     
     func newMovieViewModel(for id: UUID) -> MovieViewModel {
-        let movie = AVMutableMovie()
-        movie.timescale = 60000  // good enough for 59.94 fps (1001/60000 frame duration)
-        let movieViewModel = MovieViewModel(movie: movie, id: id)
+        let movieViewModel = MovieViewModel(id: id)
         movieViewModels[id] = movieViewModel
         return movieViewModel
     }
@@ -34,23 +33,10 @@ class MovieStore {
     }
     
     func openMovie(at url: URL) throws -> MovieViewModel {
-        do {
-            _ = url.startAccessingSecurityScopedResource()
-            let mov = try AVMutableMovie(
-                url: url,
-                options: [
-                    AVURLAssetPreferPreciseDurationAndTimingKey : true
-                ],
-                error: ()
-            )
-            let movieViewModel = MovieViewModel(movie: mov, url: url)
-            movieViewModels[movieViewModel.id] = movieViewModel
-            return movieViewModel
-        }
-        catch {
-            print("fatal error: \(error)")
-            throw error
-        }
+        _ = url.startAccessingSecurityScopedResource()
+        let movieViewModel = MovieViewModel(url: url)
+        movieViewModels[movieViewModel.id] = movieViewModel
+        return movieViewModel
     }
     
     //    func openImageSequence(at url: URL) throws -> UUID {
@@ -71,5 +57,10 @@ class MovieStore {
         
     func contains(_ id: UUID) -> Bool {
         return movieViewModels.keys.contains(id)
+    }
+    
+    func getUTType(for url: URL) -> UTType {
+        let fileExtension = url.pathExtension
+        return UTType(filenameExtension: fileExtension)!
     }
 }

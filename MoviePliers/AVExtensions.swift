@@ -300,3 +300,10 @@ extension CMTime {
         }
     }
 }
+
+extension AVFileType {
+    var utType: UTType? {
+        return UTType(rawValue)
+    }
+}
+

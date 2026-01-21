@@ -90,7 +90,7 @@ class MovieViewModel: Identifiable {
     var originalInfoDelegate: NSWindowDelegate?
     var myInfoDelegate: NSWindowDelegate?
 
-    init(movie: AVMutableMovie? = nil, url: URL? = nil, id: UUID? = nil) {
+    init(url: URL? = nil, id: UUID? = nil) {
         if let id {
             self.id = id
         }
@@ -105,8 +105,8 @@ class MovieViewModel: Identifiable {
         self.isLoaded = false
         self.isModified = false
 
-        if let movie {
-            self.movieModel = MovieModel(movie: movie, id: self.id, url: url, parent: self)
+        self.movieModel = MovieModel(id: self.id, url: url, parent: self)
+        if let movie = movieModel?.movie {
             self.movieTimeScale = movie.timescale
         }
     }

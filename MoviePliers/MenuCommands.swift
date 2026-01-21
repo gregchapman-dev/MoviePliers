@@ -33,7 +33,7 @@ struct MenuCommands: Commands {
                 showingFileImporter = true
                 print("open movie")
             }
-            .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [.quickTimeMovie, .mpeg4Movie]) { result in
+            .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: AVURLAsset.audiovisualTypes().compactMap { $0.utType }) { result in
                 switch result {
                 case .success(let url):
                     // Handle the selected file URL here
