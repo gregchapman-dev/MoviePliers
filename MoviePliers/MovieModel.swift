@@ -27,31 +27,81 @@ class MovieModel: Identifiable {
         }
 
         self.parent = parent
+        self.url = url
 
         if let url {
-            do {
-                self.url = url
-                self.movie = try AVMutableMovie(
-                    url: url,
-                    options: [
-                        AVURLAssetPreferPreciseDurationAndTimingKey : true
-                    ],
-                    error: ()
-                )
+            if let utType = url.utType {
+                if utType.conforms(to: .quickTimeMovie) || utType.conforms(to: .mpeg4Movie) {
+                    loadMovie(url)
+                }
+                else {
+                    // not mp4 or mov, we'll have to open as asset, then paste the whole thing into
+                    // an empty AVMutableMovie.
+                    loadMovieViaAsset(url)
+                }
             }
-            catch {
-                
+            else {
+                // no utType.  This should not happen.
+                print("no utType for URL: \(url)")
             }
         }
         else {
+            // No URL? Empty AVMutableMovie
             self.movie = AVMutableMovie()
             self.movie!.timescale = 60000  // good enough for 59.94 fps (1001/60000 frame duration)
         }
+    }
+    
+    func loadMovie(_ url: URL) {
+        do {
+            self.movie = try AVMutableMovie(
+                url: url,
+                options: [
+                    AVURLAssetPreferPreciseDurationAndTimingKey : true
+                ],
+                error: ()
+            )
+            Task {
+                await self.reloadMovie()
+                parent?.movieDidLoad()
+            }
+        }
+        catch {
+            // leave self.movie nil
+            print("failed to load movie from URL: \(url)")
+        }
+    }
+    
+    func loadMovieViaAsset(_ url: URL) {
+        do {
+            let asset = AVURLAsset(
+                url: url,
+                options: [
+                    AVURLAssetPreferPreciseDurationAndTimingKey : true
+                ]
+            )
+            Task {
+                await self.loadAssetIntoMovie(asset)
+                await self.reloadMovie()
+                parent?.movieDidLoad()
+            }
+        }
+    }
+    
+    func loadAssetIntoMovie(_ asset: AVURLAsset) async {
+        do {
+            // assumption: if duration is loaded, so are all the tracks and everything else we need
+            let assetDuration = try await asset.load(.duration)
+            let assetTimescale = assetDuration.timescale
 
-
-        Task {
-            await self.reloadMovie()
-            parent?.movieDidLoad()
+            let movie = AVMutableMovie()
+            movie.timescale = assetTimescale
+            let entireAssetTimeRange = CMTimeRange(start: .zero, duration: assetDuration)
+            try movie.insertTimeRange(entireAssetTimeRange, of: asset, at: .zero, copySampleData: false)
+            self.movie = movie
+        }
+        catch {
+            
         }
     }
     

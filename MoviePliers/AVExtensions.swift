@@ -307,3 +307,13 @@ extension AVFileType {
     }
 }
 
+extension URL {
+    var utType: UTType? {
+        do {
+            let rVals = try self.resourceValues(forKeys: [.contentTypeKey])
+            return rVals.contentType
+        } catch {
+            return nil
+        }
+    }
+}

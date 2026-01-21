@@ -17,6 +17,8 @@ extension FocusedValues {
 
 var movieStore = MovieStore()
 
+let contentTypes = AVURLAsset.audiovisualTypes().compactMap { $0.utType }
+
 struct MenuCommands: Commands {
     @Environment(\.openWindow) private var openWindow
     @FocusedBinding(\.activeMovieID) var activeMovieID // get the active movie (the one in the focused view/window
@@ -33,7 +35,7 @@ struct MenuCommands: Commands {
                 showingFileImporter = true
                 print("open movie")
             }
-            .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: AVURLAsset.audiovisualTypes().compactMap { $0.utType }) { result in
+            .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: contentTypes) { result in
                 switch result {
                 case .success(let url):
                     // Handle the selected file URL here
@@ -311,7 +313,7 @@ struct MenuCommandsWithoutMovie: Commands {
                 showingFileImporter = true
                 print("open movie")
             }
-            .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [.quickTimeMovie, .mpeg4Movie]) { result in
+            .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: contentTypes) { result in
                 switch result {
                 case .success(let url):
                     // Handle the selected file URL here
