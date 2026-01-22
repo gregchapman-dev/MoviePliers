@@ -83,10 +83,9 @@ struct GetInfoView: View {
         let vm = movieStore.getMovieViewModel(for: theID)
         if let vm {
             self.viewModel = vm
-            print("GetInfoView movie ID = \(theID)")
+            //print("GetInfoView movie ID = \(theID)")
             self.selectedInfoView = movieInfoViews.first!
             self.selectedTrackOrMovie = vm.trackInfos.first!
-            return
         }
         else {
             // temporary; window is in the process of going away
@@ -143,7 +142,7 @@ struct GetInfoView: View {
                     }
                 }
             }
-
+            Divider()
             infoDetailsView.frame(height: 300)
         }
         .padding(50) // Add padding for better appearance on macOS sheets
@@ -166,14 +165,37 @@ struct GetInfoView: View {
     
     private var infoDetailsView: some View {
         ScrollView {
-            if selectedInfoView.title == "Annotations" {
-                movieAnnotationsView
-            }
-            else if selectedInfoView.title == "Time" {
-                movieTimeView
+            if selectedTrackOrMovie.track == nil {
+                // movie info views
+                if selectedInfoView.title == "Annotations" {
+                    movieAnnotationsView
+                }
+                else if selectedInfoView.title == "Time" {
+                    movieTimeView
+                }
+                else {
+                    Text("needs implementation: \(selectedTrackOrMovie.name) \(selectedInfoView.title)")
+                }
             }
             else {
-                Text("needs implementation: \(selectedTrackOrMovie.name)\(selectedInfoView.title)")
+                // track info views
+                if selectedInfoView.title == "Format" {
+                    if selectedTrackOrMovie.track!.mediaType == .audio {
+                        audioTrackFormatView
+                    }
+//                    else if selectedTrackOrMovie.track!.mediaType == .video {
+//                        videoTrackFormatView
+//                    }
+//                    else {
+//                        otherMediaTrackFormatView
+//                    }
+                    else {
+                        Text("needs implementation: \(selectedTrackOrMovie.name) \(selectedInfoView.title)")
+                    }
+                }
+                else {
+                    Text("needs implementation: \(selectedTrackOrMovie.name) \(selectedInfoView.title)")
+                }
             }
         }
     }
@@ -208,7 +230,6 @@ struct GetInfoView: View {
     
     private var movieTimeView: some View {
         VStack {
-            Divider()
             Text("Current Time: \(viewModel.currentTime.formatted(.withHMSMillisAndFraction))")
                 //.frame(alignment: .leading)
             Divider()
@@ -230,4 +251,11 @@ struct GetInfoView: View {
         }
     }
 
+    private var audioTrackFormatView: some View {
+        VStack {
+            Text("Sample Rate: \(selectedTrackOrMovie.track!.audioSampleRate ?? 0.0)")
+            Text("Channels: \(selectedTrackOrMovie.track!.audioChannelCount ?? 0)")
+            Text("Format: \(selectedTrackOrMovie.track!.audioFormat ?? "unknown")")
+        }
+    }
 }

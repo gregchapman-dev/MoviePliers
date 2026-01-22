@@ -317,3 +317,72 @@ extension URL {
         }
     }
 }
+
+// track format stuff
+func getASBD(_ formatDescription: CMFormatDescription) -> AudioStreamBasicDescription? {
+    guard let asbdUnsafe = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription) else {
+        return nil
+    }
+    return asbdUnsafe.pointee
+}
+
+func getAudioFormatName(_ asbd: AudioStreamBasicDescription) -> String? {
+    var formatName: CFString?
+    var propertySize = UInt32(MemoryLayout<CFString?>.size)
+    var mutableASBD = asbd
+    
+    let status = AudioFormatGetProperty(
+        kAudioFormatProperty_FormatName,
+        UInt32(MemoryLayout<AudioStreamBasicDescription>.size),
+        &mutableASBD,
+        &propertySize,
+        &formatName
+    )
+    
+    if status == noErr, let name = formatName {
+        return (name as String)
+    }
+    
+    return nil
+}
+
+extension AVAssetTrack {
+    var audioSampleRate: Float64? {
+        if self.mediaType != .audio {
+            return nil
+        }
+        guard let formatDescription = self.formatDescriptions.first else {
+            return nil
+        }
+        guard let asbd = getASBD(formatDescription as! CMFormatDescription) else {
+            return nil
+        }
+        return asbd.mSampleRate
+    }
+    
+    var audioChannelCount: UInt32? {
+        if self.mediaType != .audio {
+            return nil
+        }
+        guard let formatDescription = self.formatDescriptions.first else {
+            return nil
+        }
+        guard let asbd = getASBD(formatDescription as! CMFormatDescription) else {
+            return nil
+        }
+        return asbd.mChannelsPerFrame
+    }
+    
+    var audioFormat: String? {
+        if self.mediaType != .audio {
+            return nil
+        }
+        guard let formatDescription = self.formatDescriptions.first else {
+            return nil
+        }
+        guard let asbd = getASBD(formatDescription as! CMFormatDescription) else {
+            return nil
+        }
+        return getAudioFormatName(asbd)
+    }
+}
