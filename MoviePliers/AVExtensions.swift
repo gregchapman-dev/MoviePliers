@@ -347,31 +347,31 @@ func getAudioFormatName(_ asbd: AudioStreamBasicDescription) -> String? {
 }
 
 extension AVAssetTrack {
-    var audioSampleRate: Float64? {
-        if self.mediaType != .audio {
-            return nil
-        }
-        guard let formatDescription = self.formatDescriptions.first else {
-            return nil
-        }
-        guard let asbd = getASBD(formatDescription as! CMFormatDescription) else {
-            return nil
-        }
-        return asbd.mSampleRate
-    }
-    
-    var audioChannelCount: UInt32? {
-        if self.mediaType != .audio {
-            return nil
-        }
-        guard let formatDescription = self.formatDescriptions.first else {
-            return nil
-        }
-        guard let asbd = getASBD(formatDescription as! CMFormatDescription) else {
-            return nil
-        }
-        return asbd.mChannelsPerFrame
-    }
+//    var audioSampleRate: Float64? {
+//        if self.mediaType != .audio {
+//            return nil
+//        }
+//        guard let formatDescription = self.formatDescriptions.first else {
+//            return nil
+//        }
+//        guard let asbd = getASBD(formatDescription as! CMFormatDescription) else {
+//            return nil
+//        }
+//        return asbd.mSampleRate
+//    }
+//    
+//    var audioChannelCount: UInt32? {
+//        if self.mediaType != .audio {
+//            return nil
+//        }
+//        guard let formatDescription = self.formatDescriptions.first else {
+//            return nil
+//        }
+//        guard let asbd = getASBD(formatDescription as! CMFormatDescription) else {
+//            return nil
+//        }
+//        return asbd.mChannelsPerFrame
+//    }
     
     var audioFormat: String? {
         if self.mediaType != .audio {

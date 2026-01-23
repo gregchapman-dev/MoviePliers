@@ -2,8 +2,8 @@ import SwiftUI
 import AVFoundation
 
 struct InfoView: Identifiable, Hashable {
-    var id: UUID = UUID()
-    var title: String
+    let id: UUID = UUID()
+    let title: String
 }
 
 let movieInfoViews: [InfoView] = [
@@ -174,7 +174,7 @@ struct GetInfoView: View {
                     movieTimeView
                 }
                 else {
-                    Text("needs implementation: \(selectedTrackOrMovie.name) \(selectedInfoView.title)")
+                    unimplementedView
                 }
             }
             else {
@@ -186,15 +186,12 @@ struct GetInfoView: View {
                     else if selectedTrackOrMovie.track!.mediaType == .video {
                         videoTrackFormatView
                     }
-                    //                    else {
-                    //                        otherMediaTrackFormatView
-                    //                    }
                     else {
-                        Text("needs implementation: \(selectedTrackOrMovie.name) \(selectedInfoView.title)")
+                        unimplementedView // otherMediaTrackFormatView
                     }
                 }
                 else {
-                    Text("needs implementation: \(selectedTrackOrMovie.name) \(selectedInfoView.title)")
+                    unimplementedView
                 }
             }
         }
@@ -247,16 +244,18 @@ struct GetInfoView: View {
 
     private var audioTrackFormatView: some View {
         VStack {
-            Text("Sample Rate: \(selectedTrackOrMovie.track!.audioSampleRate ?? 0.0)")
-            Text("Channels: \(selectedTrackOrMovie.track!.audioChannelCount ?? 0)")
             Text("Format: \(selectedTrackOrMovie.track!.audioFormat ?? "unknown")")
         }
     }
     
     private var videoTrackFormatView: some View {
         VStack {
-            Text("Frame Rate: \(selectedTrackOrMovie.track!.nominalFrameRate)")
+            Text("Nominal Frame Rate: \(selectedTrackOrMovie.track!.nominalFrameRate)")
             Text("Format: \(selectedTrackOrMovie.track!.videoCodecName ?? "unknown")")
         }
+    }
+    
+    private var unimplementedView: some View {
+        Text("needs implementation: \(selectedTrackOrMovie.name) \(selectedInfoView.title)")
     }
 }
