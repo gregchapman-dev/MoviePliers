@@ -196,7 +196,7 @@ struct GetInfoView: View {
                 }
             }
             else {
-                // track info views
+                // common track info views
                 if selectedInfoView.title == "Format" {
                     if selectedTrackOrMovie.track!.mediaType == .audio {
                         audioTrackFormatView
@@ -205,7 +205,7 @@ struct GetInfoView: View {
                         videoTrackFormatView
                     }
                     else {
-                        unimplementedView // otherMediaTrackFormatView
+                        otherMediaTrackFormatView
                     }
                 }
                 else {
@@ -268,8 +268,13 @@ struct GetInfoView: View {
     
     private var videoTrackFormatView: some View {
         VStack {
-            Text("Nominal Frame Rate: \(selectedTrackOrMovie.track!.nominalFrameRate)")
             Text("Format: \(selectedTrackOrMovie.track!.videoCodecName ?? "unknown")")
+        }
+    }
+    
+    private var otherMediaTrackFormatView: some View {
+        VStack {
+            Text("Format: \(selectedTrackOrMovie.track!.mediaSubtypeName ?? "unknown")")
         }
     }
     

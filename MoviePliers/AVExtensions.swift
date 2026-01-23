@@ -320,7 +320,7 @@ extension URL {
 
 // Track format stuff
 extension Array where Element == UInt8 {
-    var isValidOSType: Bool {
+    var isPrintableOSType: Bool {
         return self.count == 4 && self.allSatisfy { $0 >= 32 && $0 <= 126 }
     }
 }
@@ -438,6 +438,23 @@ let videoCodecNames: [OSType: String] = [
     kCMVideoCodecType_AV1: "AV1",
 ]
 
+func convertOSTypeToString(_ osType: OSType) -> String {
+    let chars: [UInt8] = [
+        UInt8((osType >> 24) & 0xFF),
+        UInt8((osType >> 16) & 0xFF),
+        UInt8((osType >> 8) & 0xFF),
+        UInt8(osType & 0xFF)
+    ]
+
+    if chars.isPrintableOSType {
+        return String(bytes: chars, encoding: .ascii) ?? "Unstringable" // this will never be "Unstringable"
+    }
+    
+    // let osTypeAsHexString = "0x" + String(osType, radix: 16)
+    let osTypeAsHexString = "0x" + String(format: "%08X", osType)
+    return "Unprintable OSType: \(osTypeAsHexString)"
+}
+
 func getVideoCodecName(from formatDescription: CMVideoFormatDescription) -> String {
     let subType = CMFormatDescriptionGetMediaSubType(formatDescription)
     
@@ -446,17 +463,8 @@ func getVideoCodecName(from formatDescription: CMVideoFormatDescription) -> Stri
         return name
     }
 
-    // Fallback for less common codecs
-    let chars = [
-        UInt8((subType >> 24) & 0xFF),
-        UInt8((subType >> 16) & 0xFF),
-        UInt8((subType >> 8) & 0xFF),
-        UInt8(subType & 0xFF)
-    ]
-    if chars.isValidOSType {
-        return String(bytes: chars, encoding: .ascii) ?? "Unknown"
-    }
-    return "Unknown"
+    // Fallback for codecs that aren't in our list (convert OSType to String)
+    return convertOSTypeToString(subType)
 }
 
 extension AVAssetTrack {
@@ -482,5 +490,20 @@ extension AVAssetTrack {
         }
         let cmVideoFormatDescription = formatDescription as! CMVideoFormatDescription
         return getVideoCodecName(from: cmVideoFormatDescription)
+    }
+}
+
+func getOtherMediaSubTypeName(from formatDescription: CMFormatDescription) -> String {
+    let subType = CMFormatDescriptionGetMediaSubType(formatDescription)
+    return convertOSTypeToString(subType)
+}
+
+extension AVAssetTrack {
+    var mediaSubtypeName: String? {
+        guard let formatDescription = self.formatDescriptions.first else {
+            return nil
+        }
+        let cmFormatDescription = formatDescription as! CMFormatDescription
+        return getOtherMediaSubTypeName(from: cmFormatDescription)
     }
 }

@@ -418,6 +418,10 @@ class MovieViewModel: Identifiable {
         if self.movieModel?.url == nil {
             self.showSaveAsPanel(suggestedFilename: "New Movie.mov")
         }
+        else if self.movieModel?.movieFileType == nil {
+            // the file is not a movie/mp4 so we can't save in place; do a save as...
+            self.showSaveAsPanel(suggestedFilename: "\(self.movieModel!.url!.lastPathComponent).mov")
+        }
         else {
             // movie came from a file url; save by replacing the movie header there (deleting no other data)
             self.replaceMovieHeader()

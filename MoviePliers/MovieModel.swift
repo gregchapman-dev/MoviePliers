@@ -17,6 +17,7 @@ class MovieModel: Identifiable {
     // url where the movie header is (either from file/open or from file/save/etc).
     // Doesn't exist for a new movie that has been edited, but not yet saved.
     var url: URL?
+    var movieFileType: AVFileType?
     
     init(id: UUID? = nil, url: URL? = nil, parent: MovieViewModel? = nil) {
         if let id {
@@ -28,7 +29,8 @@ class MovieModel: Identifiable {
 
         self.parent = parent
         self.url = url
-
+        self.movieFileType = getFileType(for: url)
+        
         if let url {
             if let utType = url.utType {
                 if utType.conforms(to: .quickTimeMovie) || utType.conforms(to: .mpeg4Movie) {
@@ -148,8 +150,11 @@ class MovieModel: Identifiable {
     }
 
     // saving operations
-    func fileType(for url: URL) -> AVFileType? {
-        // returns nil if url.pathExtension doesn't map to a fileType
+    func getFileType(for url: URL?) -> AVFileType? {
+        // returns nil if url.pathExtension doesn't map to a .mov/.mp4 fileType
+        guard let url else {
+            return nil
+        }
         if url.pathExtension == "mov" {
             return .mov
         }
@@ -165,7 +170,7 @@ class MovieModel: Identifiable {
         }
         
         var theURL: URL = url
-        var fileType: AVFileType? = fileType(for: theURL)
+        var fileType: AVFileType? = self.movieFileType
         if fileType == nil {
             // add .mov extension and save as .mov
             theURL = url.appendingPathExtension("mov")
@@ -207,16 +212,15 @@ class MovieModel: Identifiable {
             return
         }
         do {
-            let fileType = fileType(for: url)
-            
-            if let fileType {
-                try movie.writeHeader(to: url, fileType: fileType, options: .addMovieHeaderToDestination)
+            if let movieFileType = self.movieFileType {
+                try movie.writeHeader(to: url, fileType: movieFileType, options: .addMovieHeaderToDestination)
 //                let newMovieHeader: Data = try movie.makeMovieHeader(fileType: fileType)
 //                // scan the file at url for 'moov'
 //                let atomParser = AtomParser(url)
 //                atomParser.replaceMoovAtom(with: newMovieHeader)
             }
             else {
+                // should never happen
                 print("cannot save movie header to \(url.pathExtension) file")
                 return
             }
