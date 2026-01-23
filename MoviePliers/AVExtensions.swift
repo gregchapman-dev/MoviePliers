@@ -318,6 +318,13 @@ extension URL {
     }
 }
 
+// Track format stuff
+extension Array where Element == UInt8 {
+    var isValidOSType: Bool {
+        return self.count == 4 && self.allSatisfy { $0 >= 32 && $0 <= 126 }
+    }
+}
+
 // audio track format stuff
 func getASBD(_ formatDescription: CMAudioFormatDescription) -> AudioStreamBasicDescription? {
     guard let asbdUnsafe = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription) else {
@@ -388,30 +395,68 @@ extension AVAssetTrack {
 }
 
 // video track format stuff
+// mediaSubtype names (audio doesn't need this, because AudioFormat API will tell us)
+let videoCodecNames: [OSType: String] = [
+    kCMVideoCodecType_422YpCbCr8: "422YpCbCr8",
+    kCMVideoCodecType_Animation: "Animation",
+    kCMVideoCodecType_Cinepak: "Cinepak",
+    kCMVideoCodecType_JPEG: "JPEG",
+    kCMVideoCodecType_JPEG_OpenDML: "JPEG/OpenDML",
+    kCMVideoCodecType_JPEG_XL: "JPEG/XL",
+    kCMVideoCodecType_SorensonVideo: "Sorenson",
+    kCMVideoCodecType_SorensonVideo3: "Sorenson3",
+    kCMVideoCodecType_H263: "H.263",
+    kCMVideoCodecType_H264: "H.264",
+    kCMVideoCodecType_HEVC: "HEVC",
+    kCMVideoCodecType_HEVCWithAlpha: "HEVC w/ Alpha",
+    kCMVideoCodecType_DolbyVisionHEVC: "DolbyVisionHEVC",
+    kCMVideoCodecType_MPEG4Video: "MPEG-4",
+    kCMVideoCodecType_MPEG2Video: "MPEG-2",
+    kCMVideoCodecType_MPEG1Video: "MPEG-1",
+    kCMVideoCodecType_VP9: "VP9",
+    kCMVideoCodecType_DVCNTSC: "DVC/NTSC",
+    kCMVideoCodecType_DVCPAL: "DVC/PAL",
+    kCMVideoCodecType_DVCProPAL: "DVCPro/PAL",
+    kCMVideoCodecType_DVCPro50NTSC: "DVCPro50/NTSC",
+    kCMVideoCodecType_DVCPro50PAL: "DVCPro50/PAL",
+    kCMVideoCodecType_DVCPROHD720p60: "DVCPROHD/720p60",
+    kCMVideoCodecType_DVCPROHD720p50: "DVCPROHD/720p50",
+    kCMVideoCodecType_DVCPROHD1080i60: "DVCPROHD/1080i60",
+    kCMVideoCodecType_DVCPROHD1080i50: "DVCPROHD/1080i50",
+    kCMVideoCodecType_DVCPROHD1080p30: "DVCPROHD/1080p30",
+    kCMVideoCodecType_DVCPROHD1080p25: "DVCPROHD/1080p25",
+    kCMVideoCodecType_AppleProRes4444XQ: "ProRes 4444XQ",
+    kCMVideoCodecType_AppleProRes4444: "ProRes 4444",
+    kCMVideoCodecType_AppleProRes422HQ: "ProRes 422HQ",
+    kCMVideoCodecType_AppleProRes422: "ProRes 422",
+    kCMVideoCodecType_AppleProRes422LT: "ProRes 422LT",
+    kCMVideoCodecType_AppleProRes422Proxy: "ProRes 422Proxy",
+    kCMVideoCodecType_AppleProResRAW: "ProRes RAW",
+    kCMVideoCodecType_AppleProResRAWHQ: "ProRes RAWHQ",
+    kCMVideoCodecType_DisparityHEVC: "DisparityHEVC",
+    kCMVideoCodecType_DepthHEVC: "DepthHEVC",
+    kCMVideoCodecType_AV1: "AV1",
+]
+
 func getVideoCodecName(from formatDescription: CMVideoFormatDescription) -> String {
     let subType = CMFormatDescriptionGetMediaSubType(formatDescription)
     
-    switch subType {
-    case kCMVideoCodecType_H264:
-        return "H.264"
-    case kCMVideoCodecType_HEVC:
-        return "HEVC"
-    case kCMVideoCodecType_AppleProRes422:
-        return "ProRes 422"
-    case kCMVideoCodecType_AppleProRes4444:
-        return "ProRes 4444"
-    case kCMVideoCodecType_JPEG:
-        return "JPEG"
-    default:
-        // Fallback for less common codecs
-        let chars = [
-            UInt8((subType >> 24) & 0xFF),
-            UInt8((subType >> 16) & 0xFF),
-            UInt8((subType >> 8) & 0xFF),
-            UInt8(subType & 0xFF)
-        ]
+    let name = videoCodecNames[subType]
+    if let name {
+        return name
+    }
+
+    // Fallback for less common codecs
+    let chars = [
+        UInt8((subType >> 24) & 0xFF),
+        UInt8((subType >> 16) & 0xFF),
+        UInt8((subType >> 8) & 0xFF),
+        UInt8(subType & 0xFF)
+    ]
+    if chars.isValidOSType {
         return String(bytes: chars, encoding: .ascii) ?? "Unknown"
     }
+    return "Unknown"
 }
 
 extension AVAssetTrack {

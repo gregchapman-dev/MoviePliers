@@ -170,6 +170,24 @@ struct GetInfoView: View {
                 if selectedInfoView.title == "Annotations" {
                     movieAnnotationsView
                 }
+                else if selectedInfoView.title == "Colors" {
+                    unimplementedView
+                }
+                else if selectedInfoView.title == "Controller" {
+                    unimplementedView
+                }
+                else if selectedInfoView.title == "Files" {
+                    unimplementedView
+                }
+                else if selectedInfoView.title == "General" {
+                    unimplementedView
+                }
+                else if selectedInfoView.title == "Preview" {
+                    unimplementedView
+                }
+                else if selectedInfoView.title == "Size" {
+                    unimplementedView
+                }
                 else if selectedInfoView.title == "Time" {
                     movieTimeView
                 }
