@@ -183,12 +183,12 @@ struct GetInfoView: View {
                     if selectedTrackOrMovie.track!.mediaType == .audio {
                         audioTrackFormatView
                     }
-//                    else if selectedTrackOrMovie.track!.mediaType == .video {
-//                        videoTrackFormatView
-//                    }
-//                    else {
-//                        otherMediaTrackFormatView
-//                    }
+                    else if selectedTrackOrMovie.track!.mediaType == .video {
+                        videoTrackFormatView
+                    }
+                    //                    else {
+                    //                        otherMediaTrackFormatView
+                    //                    }
                     else {
                         Text("needs implementation: \(selectedTrackOrMovie.name) \(selectedInfoView.title)")
                     }
@@ -231,22 +231,16 @@ struct GetInfoView: View {
     private var movieTimeView: some View {
         VStack {
             Text("Current Time: \(viewModel.currentTime.formatted(.withHMSMillisAndFraction))")
-                //.frame(alignment: .leading)
             Divider()
             Text("Duration: \(viewModel.duration.formatted(.withHMSMillisAndFraction))")
-                //.frame(alignment: .leading)
             Divider()
             if let selection = viewModel.selection {
                 Text("Selection Start: \(selection.start.formatted(.withHMSMillisAndFraction))")
-                    //.frame(alignment: .leading)
                 Text("Selection End: \(selection.end.formatted(.withHMSMillisAndFraction))")
-                    //.frame(alignment: .leading)
                 Text("Selection Duration: \(selection.duration.formatted(.withHMSMillisAndFraction))")
-                    //.frame(alignment: .leading)
             }
             else {
                 Text("No selection")
-                    //.frame(alignment: .center)
             }
         }
     }
@@ -256,6 +250,13 @@ struct GetInfoView: View {
             Text("Sample Rate: \(selectedTrackOrMovie.track!.audioSampleRate ?? 0.0)")
             Text("Channels: \(selectedTrackOrMovie.track!.audioChannelCount ?? 0)")
             Text("Format: \(selectedTrackOrMovie.track!.audioFormat ?? "unknown")")
+        }
+    }
+    
+    private var videoTrackFormatView: some View {
+        VStack {
+            Text("Frame Rate: \(selectedTrackOrMovie.track!.nominalFrameRate)")
+            Text("Format: \(selectedTrackOrMovie.track!.videoCodecName ?? "unknown")")
         }
     }
 }

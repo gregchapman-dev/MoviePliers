@@ -318,8 +318,8 @@ extension URL {
     }
 }
 
-// track format stuff
-func getASBD(_ formatDescription: CMFormatDescription) -> AudioStreamBasicDescription? {
+// audio track format stuff
+func getASBD(_ formatDescription: CMAudioFormatDescription) -> AudioStreamBasicDescription? {
     guard let asbdUnsafe = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription) else {
         return nil
     }
@@ -384,5 +384,58 @@ extension AVAssetTrack {
             return nil
         }
         return getAudioFormatName(asbd)
+    }
+}
+
+// video track format stuff
+func getVideoCodecName(from formatDescription: CMVideoFormatDescription) -> String {
+    let subType = CMFormatDescriptionGetMediaSubType(formatDescription)
+    
+    switch subType {
+    case kCMVideoCodecType_H264:
+        return "H.264"
+    case kCMVideoCodecType_HEVC:
+        return "HEVC"
+    case kCMVideoCodecType_AppleProRes422:
+        return "ProRes 422"
+    case kCMVideoCodecType_AppleProRes4444:
+        return "ProRes 4444"
+    case kCMVideoCodecType_JPEG:
+        return "JPEG"
+    default:
+        // Fallback for less common codecs
+        let chars = [
+            UInt8((subType >> 24) & 0xFF),
+            UInt8((subType >> 16) & 0xFF),
+            UInt8((subType >> 8) & 0xFF),
+            UInt8(subType & 0xFF)
+        ]
+        return String(bytes: chars, encoding: .ascii) ?? "Unknown"
+    }
+}
+
+extension AVAssetTrack {
+    var videoDimensions: CGSize? {
+        if self.mediaType != .video {
+            return nil
+        }
+        guard let formatDescription = self.formatDescriptions.first else {
+            return nil
+        }
+        let cmVideoFormatDescription = formatDescription as! CMVideoFormatDescription
+        return CMVideoFormatDescriptionGetPresentationDimensions(
+            cmVideoFormatDescription, usePixelAspectRatio: true, useCleanAperture: true
+        )
+    }
+    
+    var videoCodecName: String? {
+        if self.mediaType != .video {
+            return nil
+        }
+        guard let formatDescription = self.formatDescriptions.first else {
+            return nil
+        }
+        let cmVideoFormatDescription = formatDescription as! CMVideoFormatDescription
+        return getVideoCodecName(from: cmVideoFormatDescription)
     }
 }
