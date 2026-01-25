@@ -13,6 +13,8 @@ class MovieModel: Identifiable {
     var duration: CMTime = .zero
     var tracks: [AVMutableMovieTrack] = []
     var size: CGSize? = nil
+    var tracksDataRefNames: [[String]] = []  // array ordered by track index
+    var movieDataRefNames: [String] = []     // all of them (no dupes)
 
     // url where the movie header is (either from file/open or from file/save/etc).
     // Doesn't exist for a new movie that has been edited, but not yet saved.
@@ -141,6 +143,9 @@ class MovieModel: Identifiable {
                 }
             }
         }
+        
+        // reload dataref file names
+        (self.movieDataRefNames, self.tracksDataRefNames) = await loadDataReferenceNames()
     }
     
     func movieDidChange(newCurrentTime: CMTime = .invalid, newSelection: CMTimeRange? = .invalid) async {
@@ -484,6 +489,43 @@ class MovieModel: Identifiable {
     func toggleTrackEnabled(_ track: AVMutableMovieTrack) async {
         track.isEnabled.toggle()
         await self.movieDidChange()
+    }
+    
+    func loadDataReferenceNames() async -> ([String], [[String]]) {
+        var tracksOutput: [[String]] = []
+        var movieOutput: [String] = []
+        
+        var movieSet: Set<String> = []
+        for track in self.tracks {
+            var trackSet: Set<String> = []
+            let trackSampleCursor = await track.makeTrackSampleCursor(presentationTimeStamp: .zero)
+            var currPTS: CMTime = trackSampleCursor.presentationTimeStamp
+            while true {
+                if let url = trackSampleCursor.currentChunkStorageURL {
+                    trackSet.insert(url.lastPathComponent)
+                    movieSet.insert(url.lastPathComponent)
+                }
+                else if let url = self.url {
+                    trackSet.insert(url.lastPathComponent)
+                    movieSet.insert(url.lastPathComponent)
+                }
+                // if there is no sample URL or self.url, then we have nothing to insert (e.g. new movie).
+                
+                trackSampleCursor.stepToNextChunkOrSegment()
+                if trackSampleCursor.presentationTimeStamp == currPTS {
+                    // we're not moving, must be at end of track
+                    break
+                }
+                currPTS = trackSampleCursor.presentationTimeStamp
+            }
+            var trackOutput = Array(trackSet)
+            trackOutput.sort()
+            tracksOutput.append(trackOutput)
+        }
+        
+        movieOutput = Array(movieSet)
+        movieOutput.sort()
+        return (movieOutput, tracksOutput)
     }
     
     func runCursorTest() async {

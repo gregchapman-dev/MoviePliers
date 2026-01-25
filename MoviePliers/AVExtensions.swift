@@ -104,6 +104,12 @@ class AVAssetTrackSampleCursor: NSObject {
     var mediaSampleCursor: AVSampleCursor?
     var currMediaTime: CMTime?
     
+    var currentChunkStorageURL: URL? {
+        guard let mediaSampleCursor else {
+            return nil
+        }
+        return mediaSampleCursor.currentChunkStorageURL
+    }
     
     init(track: AVAssetTrack, presentationTimeStamp: CMTime) async {
         self.track = track
@@ -147,7 +153,7 @@ class AVAssetTrackSampleCursor: NSObject {
         let forward: Bool = byCount > 0
         let backward: Bool = !forward
         
-        // step the media time by one sample
+        // step the media time by byCount samples
         self.mediaSampleCursor!.stepInPresentationOrder(byCount: byCount)
         var newMediaTime = self.mediaSampleCursor!.presentationTimeStamp
         
@@ -219,6 +225,37 @@ class AVAssetTrackSampleCursor: NSObject {
                 self.currMediaTime = self.currSegment!.timeMapping.mediaTimeRange.start
                 self.presentationTimeStamp = self.currSegment!.timeMapping.trackTimeRange.start
             }
+        }
+    }
+    
+    func stepToNextChunkOrSegment() {
+        guard let mediaSampleCursor, let currSegment else {
+            return
+        }
+        let samplesLeftInChunk: Int64 = mediaSampleCursor.currentChunkInfo.chunkSampleCount - mediaSampleCursor.currentSampleIndexInChunk
+        
+        if mediaSampleCursor.currentChunkInfo.chunkHasUniformSampleDurations.boolValue {
+            // cheap case, chunkInfo.chunkHasUniformSampleDurations (includes PCM audio, which is exorbitantly expensive
+            // to step through otherwise).
+            let sampleDuration: CMTime = mediaSampleCursor.currentSampleDuration
+            // Compute PTS of end-of-chunk and end-of-segment.  Step to whichever is a smaller time step.
+            let endOfChunkPTS: CMTime = CMTimeAdd(self.presentationTimeStamp, CMTimeMultiply(sampleDuration, multiplier: Int32(samplesLeftInChunk)))
+            let endOfSegmentPTS: CMTime = currSegment.timeMapping.trackTimeRange.end
+            if endOfChunkPTS <= endOfSegmentPTS {
+                self.stepInPresentationOrder(byCount: samplesLeftInChunk)
+            }
+            else {
+                let timeJumpToEndOfSegment = CMTimeSubtract(endOfSegmentPTS, self.presentationTimeStamp)
+                var sampleCountToStep: Int64 = Int64(timeJumpToEndOfSegment.seconds / sampleDuration.seconds)
+                if sampleCountToStep == 0 {
+                    sampleCountToStep = 1
+                }
+                self.stepInPresentationOrder(byCount: sampleCountToStep)
+            }
+        }
+        else {
+            // expensive case: we gotta step one sample at a time until we hit end of segment or chunk.
+            print("expensive")
         }
     }
 }

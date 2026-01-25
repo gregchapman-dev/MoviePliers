@@ -177,7 +177,7 @@ struct GetInfoView: View {
                     unimplementedView
                 }
                 else if selectedInfoView.title == "Files" {
-                    unimplementedView
+                    movieFilesView
                 }
                 else if selectedInfoView.title == "General" {
                     unimplementedView
@@ -207,6 +207,9 @@ struct GetInfoView: View {
                     else {
                         otherMediaTrackFormatView
                     }
+                }
+                else if selectedInfoView.title == "Files" {
+                    trackFilesView
                 }
                 else {
                     unimplementedView
@@ -243,6 +246,14 @@ struct GetInfoView: View {
         }
     }
     
+    private var movieFilesView: some View {
+        VStack {
+            ForEach(viewModel.movieModel?.movieDataRefNames ?? [], id: \.self) { name in
+                Text(name)
+            }
+        }
+    }
+    
     private var movieTimeView: some View {
         VStack {
             Text("Current Time: \(viewModel.currentTime.formatted(.withHMSMillisAndFraction))")
@@ -275,6 +286,17 @@ struct GetInfoView: View {
     private var otherMediaTrackFormatView: some View {
         VStack {
             Text("Format: \(selectedTrackOrMovie.track!.mediaSubtypeName ?? "unknown")")
+        }
+    }
+    
+    private var trackFilesView: some View {
+        VStack {
+            let names = viewModel.movieModel!.tracksDataRefNames
+            let tracks = viewModel.movieModel!.tracks
+            let track = selectedTrackOrMovie.track!
+            ForEach(names[tracks.firstIndex(of: track)!], id: \.self) { name in
+                Text(name)
+            }
         }
     }
     
