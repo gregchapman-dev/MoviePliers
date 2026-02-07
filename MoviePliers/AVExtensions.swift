@@ -256,6 +256,7 @@ class AVAssetTrackSampleCursor: NSObject {
         else {
             // expensive case: we gotta step one sample at a time until we hit end of segment or chunk.
             print("expensive")
+            abort()
         }
     }
 }
